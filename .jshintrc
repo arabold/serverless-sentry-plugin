@@ -1,0 +1,20 @@
+{
+  "globals": true,
+  "globalstrict": true,
+  "curly": true,
+  "futurehostile": true,
+  "latedef": true,
+  "esnext": true,
+  "laxcomma": true,
+  "mocha": true,
+  "node": true,
+  "eqeqeq": true,
+  "undef": true,
+  "unused": true,
+  "-W100": true,
+  "predef": [
+    "base_dir",
+    "test_dir",
+    "consumer_base_dir"
+  ]
+}
