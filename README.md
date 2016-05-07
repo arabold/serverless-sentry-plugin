@@ -95,6 +95,7 @@ please _disable minification for your project_.
 * Initial release
 
 ### To Dos
-* Create releases in Sentry when functions are deployed
-* Automatic upload of source map files to Sentry
-* Add support for Python runtime
+* Create releases in Sentry when functions are deployed.
+* Support for minified code and source map files (might require the use of `raven-js` instead of `raven-node`).
+* Expose `raven` client globally so it's usable from user's own code.
+* Add support for Python runtime.
