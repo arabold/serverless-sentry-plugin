@@ -76,6 +76,12 @@ The plugin injects code into the generated `_serverless_handler.js` Lambda entry
 extends it with automatic error reporting. Whenever your Lambda handler sets an error response, it is
 forwarded to Sentry with additional context information.
 
+### Detecting Slow Running Code
+It's a good practice to specify the function timeout in `s-function.json` to be at last twice as large 
+as the _expected maximum execution time_. If you specify a timeout of 6 seconds (the default), this plugin will
+warn you if the function runs for 3 or more seconds. That means it's time to either review your code for
+possible performance improvements or increase the timeout value slightly.
+
 ### Development
 To avoid false reporting, the plugin will only run on an AWS environment, not on local development machines.
 
@@ -90,6 +96,9 @@ please _disable minification for your project_.
 
 
 ## Releases
+
+### 0.1.1
+* Emit a warning if your Lambda function runs for more than half the specified timeout value.
 
 ### 0.1.0
 * Initial release
