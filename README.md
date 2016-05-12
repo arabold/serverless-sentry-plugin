@@ -66,7 +66,6 @@ Any help to add Python support is appreciated.
 
 ## Usage
 
-### Function Deploy
 The plugin automatically hooks into `serverless function deploy` and does not require
 any manual invocation.
 
@@ -77,7 +76,7 @@ extends it with automatic error reporting. Whenever your Lambda handler sets an 
 forwarded to Sentry with additional context information.
 
 ### Capturing Custom Messages and Exceptions
-When installed and enabled, this plugin exposes a new global object `sls_raven` that you can use
+When installed and enabled, the plugin exposes a new global object `sls_raven` that you can use
 to capture messages and exceptions to Sentry.
 ```
   if (global.sls_raven) {
@@ -89,16 +88,6 @@ This instance of the [Raven](https://github.com/getsentry/raven-node/) client is
 some useful default tags. For further documentation on how to use it to capture your own messages refer to 
 [docs.getsentry.com](https://docs.getsentry.com/hosted/clients/node/usage/).
 
-### Turn Sentry Reporting On/Off
-As stated before, the plugin only runs if the `SENTRY_DSN` environment variable is set. This is an easy
-way to enable or disable reporting for specific functions through your `s-function.json`.
-
-### Detecting Slow Running Code
-It's a good practice to specify the function timeout in `s-function.json` to be at last twice as large 
-as the _expected maximum execution time_. If you specify a timeout of 6 seconds (the default), this plugin will
-warn you if the function runs for 3 or more seconds. That means it's time to either review your code for
-possible performance improvements or increase the timeout value slightly.
-
 ### Local Development
 This plugin will inject code into your Lambda functions during _deployment_ only. In other words the global
 `sls_raven` object will _not_ be available and error responses will _not_ be captured while developing
@@ -109,14 +98,21 @@ at the beginning of your code base:
 global.sls_raven = global.sls_raven || new (require("raven").Client)();
 ```
 
-### Use With Serverless Optimizer Plugin
-The current version 0.3.0 of `lsmod` has a small bug that prevents the use of this plugin in
-combination with the [Serverless Optimizer Plugin](https://github.com/serverless/serverless-optimizer-plugin).
-Until a fix is released feel free to use a patched [Raven Module](https://github.com/arabold/raven-node).
+### Detecting Slow Running Code
+It's a good practice to specify the function timeout in `s-function.json` to be at last twice as large 
+as the _expected maximum execution time_. If you specify a timeout of 6 seconds (the default), this plugin will
+warn you if the function runs for 3 or more seconds. That means it's time to either review your code for
+possible performance improvements or increase the timeout value slightly.
 
+### Turn Sentry Reporting On/Off
+As stated before, the plugin only runs if the `SENTRY_DSN` environment variable is set. This is an easy
+way to enable or disable reporting for specific functions through your `s-function.json`.
+
+### Minified Code (e.g. Serverless Optimizer Plugin)
 For minified projects with a large code base and many dependencies the `raven` reported might fail 
-to publish events to Sentry. This seems to be due to a bug with the serialization of messages. As a workaround
-please _disable minification for your project_.
+to publish events to Sentry. This happens due to an issue with serializing the call stack in `raven`. 
+As a workaround please _disable minification for your project_. You can still use the optimizer plugin to 
+compact all dependencies into a single JavaScript file and/or babelify your code as usual.
 
 
 ## Releases
