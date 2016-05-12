@@ -76,14 +76,38 @@ The plugin injects code into the generated `_serverless_handler.js` Lambda entry
 extends it with automatic error reporting. Whenever your Lambda handler sets an error response, it is
 forwarded to Sentry with additional context information.
 
+### Capturing Custom Messages and Exceptions
+When installed and enabled, this plugin exposes a new global object `sls_raven` that you can use
+to capture messages and exceptions to Sentry.
+```
+  if (global.sls_raven) {
+    global.sls_raven.captureMessage("Hello from Lambda", { level: "info" });
+  }
+```
+
+This instance of the [Raven](https://github.com/getsentry/raven-node/) client is preconfigured and sets
+some useful default tags. For further documentation on how to use it to capture your own messages refer to 
+[docs.getsentry.com](https://docs.getsentry.com/hosted/clients/node/usage/).
+
+### Turn Sentry Reporting On/Off
+As stated before, the plugin only runs if the `SENTRY_DSN` environment variable is set. This is an easy
+way to enable or disable reporting for specific functions through your `s-function.json`.
+
 ### Detecting Slow Running Code
 It's a good practice to specify the function timeout in `s-function.json` to be at last twice as large 
 as the _expected maximum execution time_. If you specify a timeout of 6 seconds (the default), this plugin will
 warn you if the function runs for 3 or more seconds. That means it's time to either review your code for
 possible performance improvements or increase the timeout value slightly.
 
-### Development
-To avoid false reporting, the plugin will only run on an AWS environment, not on local development machines.
+### Local Development
+This plugin will inject code into your Lambda functions during _deployment_ only. In other words the global
+`sls_raven` object will _not_ be available and error responses will _not_ be captured while developing
+locally. However, this is intended to not clutter your Sentry logs with unwanted debug information. If you
+need `sls_raven` also during local development, you can instantiate your own version somewhere 
+at the beginning of your code base:
+```
+global.sls_raven = global.sls_raven || new (require("raven").Client)();
+```
 
 ### Use With Serverless Optimizer Plugin
 The current version 0.3.0 of `lsmod` has a small bug that prevents the use of this plugin in
@@ -97,6 +121,10 @@ please _disable minification for your project_.
 
 ## Releases
 
+### 0.1.2
+* Expose the raven client as global object `global.sls_raven`. This is only set if `SENTRY_DSN` is
+  set for the current function.
+
 ### 0.1.1
 * Emit a warning if your Lambda function runs for more than half the specified timeout value.
 
@@ -106,5 +134,4 @@ please _disable minification for your project_.
 ### To Dos
 * Create releases in Sentry when functions are deployed.
 * Support for minified code and source map files (might require the use of `raven-js` instead of `raven-node`).
-* Expose `raven` client globally so it's usable from user's own code.
 * Add support for Python runtime.
