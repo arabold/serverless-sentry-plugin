@@ -117,6 +117,9 @@ compact all dependencies into a single JavaScript file and/or babelify your code
 
 ## Releases
 
+### 0.1.3
+* Fixed timeout detection for Node 0.10.42 style use of `context.succeed` and `context.fail`
+
 ### 0.1.2
 * Expose the raven client as global object `global.sls_raven`. This is only set if `SENTRY_DSN` is
   set for the current function.
