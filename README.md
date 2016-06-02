@@ -104,6 +104,17 @@ as the _expected maximum execution time_. If you specify a timeout of 6 seconds 
 warn you if the function runs for 3 or more seconds. That means it's time to either review your code for
 possible performance improvements or increase the timeout value slightly.
 
+### Low Memory Warnings
+The plugin will automatically generate a warning if the memory consuption of your Lambda function crosses
+75% of the allocated memory limit. For this the plugin samples the amount of memory used by Node.js every 
+250 milliseconds (using `process.memoryUsage()`), independently of any garbage collection. As with
+all Node.js code, it is important to remember that JavaScript code runs single-threaded and the monitoring function
+will only be able to sample memory usage, if your code is in a wait state, e.g. during database queries or 
+when calling asynchronous functions with a callback.
+
+Only one low memory warning will be generated per function invocation. You might want to increase the
+memory limit step by step until your code runs without warnings.
+
 ### Turn Sentry Reporting On/Off
 As stated before, the plugin only runs if the `SENTRY_DSN` environment variable is set. This is an easy
 way to enable or disable reporting for specific functions through your `s-function.json`.
@@ -116,6 +127,10 @@ compact all dependencies into a single JavaScript file and/or babelify your code
 
 
 ## Releases
+
+### 0.1.4
+* Low memory warning! The plugin now automatically raises a warning if your Lambda function uses 75%
+  or more of the assigned memory limit. 
 
 ### 0.1.3
 * Fixed timeout detection for Node 0.10.42 style use of `context.succeed` and `context.fail`
