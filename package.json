@@ -1,6 +1,6 @@
 {
   "name": "serverless-sentry-plugin",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "engines": {
     "node": ">=4.0"
   },

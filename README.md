@@ -119,6 +119,23 @@ memory limit step by step until your code runs without warnings.
 As stated before, the plugin only runs if the `SENTRY_DSN` environment variable is set. This is an easy
 way to enable or disable reporting for specific functions through your `s-function.json`.
 
+In some cases it might be desirable to disable only error reporting but keep the timeout and low memory 
+warnings in place. This can be achieved via setting the flag `ignoreErrorResponses` to `true`
+in your `s-function.json`:
+```
+{
+  ...
+  "custom": {
+    "sentry": {
+      "captureErrors": false,
+      "captureUnhandledExceptions": true,
+      "captureMemoryWarnings": true,
+      "captureTimeoutWarnings": true
+    }
+  }
+  ...
+```
+
 ### Minified Code (e.g. Serverless Optimizer Plugin)
 For minified projects with a large code base and many dependencies the `raven` reported might fail 
 to publish events to Sentry. This happens due to an issue with serializing the call stack in `raven`. 
@@ -127,6 +144,13 @@ compact all dependencies into a single JavaScript file and/or babelify your code
 
 
 ## Releases
+
+### 0.2.0
+* Properly capture error strings returned by your Lambda function.
+* Improved timeout and out of memory tracking and reporting.
+* Capture unhandled exceptions and forward them to Sentry.
+* Allow more granular configuration of which errors and warnings should be tracked.
+* Log Amazon Cognito identity (if available) in the Sentry user context.
 
 ### 0.1.4
 * Low memory warning! The plugin now automatically raises a warning if your Lambda function uses 75%
@@ -148,4 +172,5 @@ compact all dependencies into a single JavaScript file and/or babelify your code
 ### To Dos
 * Create releases in Sentry when functions are deployed.
 * Support for minified code and source map files (might require the use of `raven-js` instead of `raven-node`).
+* Warn if `raven-node` module isn't available; install it automatically using `npm`.
 * Add support for Python runtime.
