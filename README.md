@@ -1,6 +1,7 @@
 # serverless-sentry-plugin
 
 [![serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)
+[![npm version](https://badge.fury.io/js/serverless-sentry-plugin.svg)](https://badge.fury.io/js/serverless-sentry-plugin)
 
 This plugin adds automatic forwarding of errors and exceptions to Sentry (getsentry.com) to Serverless 0.5.x.
 
@@ -11,6 +12,12 @@ requiring any code changes.
 
 **IMPORTANT:** Currently this plugin only supports the `nodejs` and `nodejs4.3` runtimes.
 Any help to add Python support is appreciated.
+
+* [Installation](#installation)
+* [Usage](#usage)
+* [How It Works](#how-it-works)
+* [Troubleshooting](#troubleshooting)
+* [Releases](#releases)
 
 
 ## Installation
@@ -123,7 +130,7 @@ memory limit step by step until your code runs without warnings.
 
 ### Turn Sentry Reporting On/Off
 As stated before, the plugin only runs if the `SENTRY_DSN` environment variable is set. This is an easy
-way to enable or disable reporting for specific functions through your `s-function.json`.
+way to enable or disable reporting as a whole or for specific functions through your `s-function.json`.
 
 In some cases it might be desirable to disable only error reporting but keep the timeout and low memory 
 warnings in place. This can be achieved via setting the flag `ignoreErrorResponses` to `true`
@@ -176,12 +183,24 @@ Many users split their code base similar to the example below:
   |     |     |__ event.json
   |     |     |__ handler.js
   |     |     |__ s-function.json
-  |     |__ package.json         // include raven module here
+  |     |__ package.json            // <-- include raven module here
   |__ package.json
   |__ s-project.json
   |__ s-resources-cf.json
   |__ s-templates.json
 ``` 
+
+### No errors are reported to Sentry
+This can have multiple reasons but here are a couple of hints:
+
+1. Check if there are any errors reported in AWS CloudWatch for your Lambda that would indicate a general problem with the code,
+   such as compiling issues for example.
+2. Open up your `s-project.json` and make sure `serverless-sentry-plugin` is loaded.
+3. Open up your `package.json` and verify that the `raven` NPM module is installed.
+4. If you're using a code minification tool such as the Babel runtime, `serverless-optimizer-plugin` or `serverless-webpack-plugin`,
+   make sure to _disable_ minification. You can still combine all JavaScript sources into a single file, but minification often
+   breaks the call stack in Raven/Sentry and prevents the reporting from working properly.
+4. Go through the [Installation](#installation) section again and make sure you followed all of the mentioned steps.
 
 
 ## Releases
