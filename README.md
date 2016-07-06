@@ -7,17 +7,30 @@ This plugin adds automatic forwarding of errors and exceptions to Sentry (getsen
 
 
 ## Overview
-The plugin lets you forward errors and exceptions in your Lambda code to Sentry (getsentry.com) without
+The plugin lets you forward errors and exceptions in your AWS Lambda code to Sentry (getsentry.com) without
 requiring any code changes.
 
 **IMPORTANT:** Currently this plugin only supports the `nodejs` and `nodejs4.3` runtimes.
 Any help to add Python support is appreciated.
 
+* [Features](#features)
 * [Installation](#installation)
 * [Usage](#usage)
 * [How It Works](#how-it-works)
 * [Troubleshooting](#troubleshooting)
 * [Releases](#releases)
+
+
+## Features
+
+* Easy to use.
+* Integrates with [Serverless Framework](http://www.serverless.com) for AWS Lambda.
+* Automatically wrap your Node.js code with [Sentry](http://getsentry.com) error capturing.
+* Forwards any errors returned by your AWS Lambda function to Sentry.
+* Warn if your code is about to hit the execution timeout limit.
+* Warn if your Lambda function is low on memory.
+* Catches and reports unhandled exceptions.
+* Serverless, Sentry and as well as this plugin are all Open Source. Yay!
 
 
 ## Installation
