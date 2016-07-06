@@ -163,7 +163,31 @@ As a workaround please _disable minification for your project_. You can still us
 compact all dependencies into a single JavaScript file and/or babelify your code as usual.
 
 
+## Troubleshooting
+
+### Error: Cannot find module 'raven'
+This error is thrown in AWS Lamdba if you didn't include the `raven` module to you function's `package.json`.
+Many users split their code base similar to the example below:
+
+```
+<project root>
+  |__ src
+  |     |__ <function>
+  |     |     |__ event.json
+  |     |     |__ handler.js
+  |     |     |__ s-function.json
+  |     |__ package.json         // include raven module here
+  |__ package.json
+  |__ s-project.json
+  |__ s-resources-cf.json
+  |__ s-templates.json
+``` 
+
+
 ## Releases
+
+### 0.2.1
+* Fixed an issue with the memory monitor not releasing resources when exiting.
 
 ### 0.2.0
 * Properly capture error strings returned by your Lambda function.
