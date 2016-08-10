@@ -146,7 +146,7 @@ As stated before, the plugin only runs if the `SENTRY_DSN` environment variable 
 way to enable or disable reporting as a whole or for specific functions through your `s-function.json`.
 
 In some cases it might be desirable to disable only error reporting but keep the timeout and low memory 
-warnings in place. This can be achieved via setting the flag `ignoreErrorResponses` to `true`
+warnings in place. This can be achieved via setting the flag `captureErrors` to `false`
 in your `s-function.json`:
 ```
 {
