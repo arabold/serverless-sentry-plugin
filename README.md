@@ -218,6 +218,10 @@ This can have multiple reasons but here are a couple of hints:
 
 ## Releases
 
+### 0.3.0
+* Automatically set the Sentry [environment details](https://blog.getsentry.com/2016/07/22/environment-details.html)
+  according to the Serverless stage (requires `raven-node` v0.12.0).
+
 ### 0.2.1
 * Fixed an issue with the memory monitor not releasing resources when exiting.
 
