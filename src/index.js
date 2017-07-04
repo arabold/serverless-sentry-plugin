@@ -2,14 +2,10 @@
 
 const _ = require("lodash")
 	, BbPromise = require("bluebird")
-	// , glob = require("glob")
-	// , fs = require("fs")
-	// , path = require("path")
-	// , crypto = require("crypto")
-	, request = require("superagent")
-	, childProcess = require("child_process")
 	, SemVer = require("semver")
-	, uuid = require("uuid/v4");
+	, uuid = require("uuid/v4")
+	, request = require("superagent")
+	, GitRev = require("./git-rev");
 
 /**
  * Serverless Plugin forward Lambda exceptions to Sentry (https://sentry.io)
@@ -24,37 +20,14 @@ class Sentry {
 		this.hooks = {
 			"before:package:initialize": this.beforePackageInitialize.bind(this),
 			"after:package:initialize": this.afterPackageInitialize.bind(this),
-			"after:package:createDeploymentArtifacts": this.afterCreateDeploymentArtifacts.bind(this),
-			"after:aws:deploy:deploy:uploadArtifacts": this.afterUploadArticfacts.bind(this),
 			"after:deploy:deploy": this.afterDeployFunctions.bind(this)
 		};
 
-		// // Import function from AWS Provider to determine the artifacts bucket name
-		// const setBucketName = require(
-		// 	path.join(this._serverless.config.serverlessPath,
-		// 		"plugins",
-		// 		"aws",
-		// 		"lib",
-		// 		"setBucketName")
-		// );
-		//
-		// _.assign(
-		// 	this,
-		// 	setBucketName
-		// );
 		this.configPlugin();
 	}
 
 	configPlugin() {
-		this.sentry = {
-			dsn: null, // mandatory
-			stage: null, // will be set in validate()
-			sourcemaps: {
-				dir: ".",
-				pattern: [ "**/*.map" ]
-			}
-		};
-
+		this.sentry = {};
 		if (_.has(this._custom, "sentry") && _.isPlainObject(this._custom.sentry)) {
 			_.assign(this.sentry, this._custom.sentry);
 		}
@@ -71,21 +44,27 @@ class Sentry {
 		this._stage = this._options.stage;
 		this._validated = true;
 
-		// Validate Sentry options
-		if (!this.sentry.dsn) {
-			return BbPromise.reject(new this._serverless.classes.Error("Sentry DSN must be set."));
-		}
+		return this._serverless.variables.populateObject(this.sentry)
+		.then(populatedObject => {
+			this.sentry = populatedObject;
 
-		if (!this.sentry.stage) {
-			this.sentry.stage = this._stage;
-		}
+			// Validate Sentry options
+			if (!this.sentry.dsn) {
+				return BbPromise.reject(new this._serverless.classes.Error("Sentry DSN must be set."));
+			}
 
-		return BbPromise.resolve();
-	}
+			// Set default option values
+			if (!this.sentry.environment) {
+				this.sentry.environment = this._stage;
+			}
 
-	setBucketName() {
-		return this._provider.getServerlessDeploymentBucketName()
-		.then(bucketName => this._bucketName = bucketName);
+			if (this.sentry.authToken && (!this.sentry.organization || !this.sentry.project)) {
+				this._serverless.cli.log("Sentry: In order to use the Sentry API " +
+					"make sure to set `organization` and `project` in your `serverless.yml`.");
+				_.unset(this.sentry, "authToken");
+			}
+			return BbPromise.resolve();
+		});
 	}
 
 	beforePackageInitialize() {
@@ -99,17 +78,10 @@ class Sentry {
 		.then(this.instrumentFunctions);
 	}
 
-	afterCreateDeploymentArtifacts() {
-	}
-
-	afterUploadArticfacts() {
-		return BbPromise.bind(this)
-		.then(this.setBucketName)
-		.then(this.uploadSourceMaps);
-	}
-
 	afterDeployFunctions() {
-		return this.createSentryRelease();
+		return BbPromise.bind(this)
+		.then(this.createSentryRelease)
+		.then(this.deploySentryRelease);
 	}
 
 	instrumentFunctions() {
@@ -138,8 +110,8 @@ class Sentry {
 		if (_.has(sentryConfig, "dsn")) {
 			functionObject.environment.SENTRY_DSN = sentryConfig.dsn;
 		}
-		if (_.has(sentryConfig, "release")) {
-			functionObject.environment.SENTRY_RELEASE = sentryConfig.release;
+		if (_.has(sentryConfig, "release.version")) {
+			functionObject.environment.SENTRY_RELEASE = sentryConfig.release.version;
 		}
 		if (_.has(sentryConfig, "environment")) {
 			functionObject.environment.SENTRY_ENVIRONMENT = sentryConfig.environment;
@@ -170,162 +142,123 @@ class Sentry {
 	}
 
 	setRelease() {
-		if (_.has(this.sentry, "release")) {
-			// Already have a release version set
+		if (this.sentry.release && !_.isPlainObject(this.sentry.release)) {
+			// Expand to the long form
+			this.sentry.release = {
+				version: this.sentry.release
+			};
+		}
+
+		const version = _.get(this.sentry, "release.version", false);
+		if (version === false || version === "false") {
+			// nothing to do
+			_.unset(this.sentry, "release");
 			return BbPromise.resolve();
 		}
 
-		return this.getGitRevision()
-		.then(gitRev => {
-			console.log("GIT REVISION:", gitRev);
-			return gitRev;
-		})
-		.catch(() => {
-			// No git available. We use a random number instead.
-			process.env.SLS_DEBUG && this._serverless.cli.log("Sentry: No Git available. Creating random release version.");
-			return _.replace(uuid(), /\-/g, "");
-		})
-		.then(version => {
-			process.env.SLS_DEBUG && this._serverless.cli.log(`Sentry: Release ${version}.`);
-			this.sentry.release = version;
-			return BbPromise.resolve();
+		return BbPromise.try(() => {
+			if (version === true || version === "true" || version === "git") {
+				const gitRev = new GitRev({ cwd: this._serverless.config.servicePath });
+				return gitRev.tag()
+				.then(version => {
+					// Populate the refs (if not set manually already)
+					_.set(this.sentry, "release.version", version);
+					if (!_.has(this.sentry, "release.refs")) {
+						return BbPromise.join(
+							gitRev.origin()
+								.then(str => str.match(/[:\/]([^\/]+\/[^\/]+?)(\.git)?$/ig)[1])
+								.catch(_.noop),
+							gitRev.long()
+						)
+						.spread((repository, commit) => {
+							if (repository && commit) {
+								const refs = [{ repository, commit }];
+								_.set(this.sentry, "release.refs", refs);
+							}
+						});
+					}
+				})
+				.catch(err => {
+					// No git available.
+					if (version === "git") {
+						// Error out
+						return BbPromise.reject(new this._serverless.classes.Error(`Sentry: No Git available - ${err.toString()}`));
+					}
+					// Fall back to use a random number instead.
+					process.env.SLS_DEBUG && this._serverless.cli.log("Sentry: No Git available. Creating a random release version...");
+					_.set(this.sentry, "release.version", this.getRandomVersion());
+				});
+			}
+			else if (version === "random") {
+				process.env.SLS_DEBUG && this._serverless.cli.log("Sentry: Creating a random release version...");
+				_.set(this.sentry, "release.version", this.getRandomVersion());
+			}
+			else {
+				const str = _.trim(String(version));
+				process.env.SLS_DEBUG && this._serverless.cli.log(`Sentry: Setting release version to "${str}"...`);
+				_.set(this.sentry, "release.version", str);
+			}
 		});
 	}
 
 	createSentryRelease() {
-		if (!this.sentry.authToken) {
-			// Skip creating release if no auth token is set
-			return BbPromise.resolve();
-		}
-		if (!this.sentry.organization || !this.sentry.project) {
-			this._serverless.cli.log("Sentry: Cannot create Sentry release. " +
-				"Make sure to set `organization` and `project` in your `serverless.yml`.");
+		if (!this.sentry.authToken || !this.sentry.release) {
+			// Nothing to do
 			return BbPromise.resolve();
 		}
 
 		const organization = this.sentry.organization;
 		const project = this.sentry.project;
 		const release = this.sentry.release;
+		this._serverless.cli.log(`Sentry: Creating new release "${release.version}"...`);
+
 		return BbPromise.fromCallback(cb =>
-			request.post(`https://sentry.io/api/0/projects/${organization}/${project}/releases/`)
+			request.post(`https://sentry.io/api/0/organizations/${organization}/releases/`)
 			.set("Authorization", `Bearer ${this.sentry.authToken}`)
-			.send({ version: release })
+			.send({
+				version: release.version,
+				refs: release.refs,
+				projects: [ project ]
+			})
 			.end(cb)
 		)
-		.then(() => {
-			this._serverless.cli.log(`Sentry: Created new release ${release}`);
-			return BbPromise.resolve();
-		})
 		.catch(err => {
+			if (err && err.response && err.response.text) {
+				this._serverless.cli.log(`Sentry: Received error response from Sentry:\n${err.response.text}`);
+			}
 			return BbPromise.reject(new this._serverless.classes.Error("Sentry: Error uploading release - " + err.toString()));
 		});
 	}
 
-	// uploadSourceMaps() {
-	// 	if (!this.sentry.authToken) {
-	// 		// Skip creating release if no auth token is set
-	// 		return BbPromise.resolve();
-	// 	}
-	//
-	// 	let patterns = _.get(this.sentry, "sourcemaps.pattern", []);
-	// 	if (_.isString(patterns)) {
-	// 		patterns = [ patterns ];
-	// 	}
-	// 	if (_.isArray(patterns) && !_.isEmpty(patterns)) {
-	// 		if (!this.sentry.organization || !this.sentry.project) {
-	// 			this._serverless.cli.log("Sentry: Cannot upload source maps. " +
-	// 				"Make sure to set `organization` and `project` in your `serverless.yml`.");
-	// 			return BbPromise.resolve();
-	// 		}
-	//
-	// 		this._serverless.cli.log("Sentry: Uploading source-maps to S3...");
-	// 		const servicePath = this._serverless.config.servicePath;
-	// 		const sourceMapsDir = path.resolve(servicePath,
-	// 			_.trimStart(_.get(this.sentry, "sourcemaps.dir", "."), path.sep));
-	// 		const options = {
-	// 			cwd: sourceMapsDir,
-	// 			nodir: true,
-	// 			ignore: "node_modules/**"
-	// 		};
-	//
-	// 		const date = new Date();
-	// 		const organization = this.sentry.organization;
-	// 		const project = this.sentry.project;
-	// 		const release = this.sentry.release;
-	// 		const filesUploadUrl = `https://sentry.io/api/0/projects/${organization}/${project}/releases/${release}/files/`;
-	//
-	// 		const files = _.flatten(_.map(patterns, globString => glob.sync(globString, options)));
-	// 		return BbPromise.each(files, file => {
-	// 			const fileName = path.relative(sourceMapsDir, file);
-	// 			const fileContent = fs.readFileSync(file);
-	// 			const fileHash = crypto
-	// 				.createHash("sha1")
-	// 				.update(fileContent)
-	// 				.digest("base64");
-	//
-	// 			// Upload to S3 and grant Sentry access
-	// 			const s3Key = `${this._serverless.service.package.artifactDirectoryName}/source-maps/${release}/${fileName}`;
-	// 			const fileSize = fileContent.length;
-	// 			let params = {
-	// 				Bucket: this._bucketName,
-	// 				Key: s3Key,
-	// 				Body: fileContent,
-	// 				ContentType: "application/json",
-	// 				ACL: "public-read", // FIXME We should provide a better way of protecting this other than just a secret URL
-	// 				Metadata: {
-	// 					filesha1: fileHash,
-	// 				},
-	// 			};
-	//
-	// 			process.env.SLS_DEBUG && this._serverless.cli.log(`Sentry: Uploading "${fileName}" (${fileSize})...`);
-	// 			return this._provider.request("S3",
-	// 				"putObject",
-	// 				params,
-	// 				this._options.stage,
-	// 				this._options.region
-	// 			)
-	// 			.then(() => {
-	// 				const s3Url = `https://s3.amazonaws.com/${this._bucketName}/${s3Key}`;
-	// 				// Add the source map to Sentry
-	// 				return BbPromise.fromCallback(cb =>
-	// 					request.post(filesUploadUrl)
-	// 					.set("Authorization", `Bearer ${this.sentry.authToken}`)
-	// 					.field("file", `@${fileName}`)
-	// 					.field("name", s3Url)
-	// 					.attach(JSON.stringify({
-	// 						dateCreated: date.toISOString(),
-	// 						headers: {
-	// 							"Content-Type": "application/octet-stream"
-	// 						},
-	// 						id: "1",
-	// 						name: s3Url,
-	// 						sha1: fileHash,
-	// 						size: fileSize
-	// 					}))
-	// 					.end(cb)
-	// 				);
-	// 			});
-	// 		});
-	// 	}
-	// }
+	deploySentryRelease() {
+		if (!this.sentry.authToken || !this.sentry.release) {
+			// Nothing to do
+			return BbPromise.resolve();
+		}
 
-	/**
-	 * The current tag if there is a tag,
-	 * otherwise, just returns the current hash
-	 */
-	getGitRevision() {
-		const command = "git describe --always --tag --abbrev=0";
-		const cwd = this._serverless.config.servicePath;
-		return new BbPromise((resolve, reject) => {
-			childProcess.exec(command, { cwd }, (err, stdout, stderr) => {
-				if (err) {
-					reject(err, stderr);
-				}
-				else {
-					resolve(stdout);
-				}
-			});
+		const organization = this.sentry.organization;
+		const release = this.sentry.release;
+		this._serverless.cli.log(`Sentry: Deploying release "${release.version}"...`);
+
+		return BbPromise.fromCallback(cb =>
+			request.post(`https://sentry.io/api/0/organizations/${organization}/releases/${encodeURIComponent(release.version)}/deploys/`)
+			.set("Authorization", `Bearer ${this.sentry.authToken}`)
+			.send({
+				environment: this.sentry.environment,
+				name: `Deployed ${this._serverless.service.service}`
+			})
+			.end(cb)
+		)
+		.catch(err => {
+			if (err && err.response && err.response.text) {
+				this._serverless.cli.log(`Sentry: Received error response from Sentry:\n${err.response.text}`);
+			}
+			return BbPromise.reject(new this._serverless.classes.Error("Sentry: Error deploying release - " + err.toString()));
 		});
+	}
+
+	getRandomVersion() {
+		return BbPromise.resolve(_.replace(uuid(), /\-/g, ""));
 	}
 }
 
