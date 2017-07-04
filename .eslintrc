@@ -1,0 +1,31 @@
+---
+# Based on the AirBnb JavaScript styleguides with our own twist
+env:
+  es6: true
+  node: true
+extends:
+  - eslint:recommended
+rules:
+  indent:
+    - error
+    - tab
+  linebreak-style:
+    - error
+    - unix
+  semi:
+    - error
+    - always
+  quotes:
+    - error
+    - double
+    - avoidEscape: true
+  no-mixed-spaces-and-tabs: error
+  space-before-blocks: error
+  arrow-spacing: error
+  key-spacing: [ error, { afterColon: true, mode: minimum } ]
+  brace-style: [ error, stroustrup ]
+  comma-spacing: [ error, { before: false, after: true } ]
+  comma-style: [ error, last, { exceptions: { VariableDeclaration: true } } ]
+  array-bracket-spacing: off # [ error, always, { singleValue: false } ]
+  computed-property-spacing: [ error, never ]
+  object-curly-spacing: [ error, always ]
