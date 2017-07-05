@@ -20,7 +20,8 @@ class Sentry {
 		this.hooks = {
 			"before:package:initialize": this.beforePackageInitialize.bind(this),
 			"after:package:initialize": this.afterPackageInitialize.bind(this),
-			"after:deploy:deploy": this.afterDeployFunctions.bind(this)
+			"before:deploy:deploy": this.beforeDeployDeploy.bind(this),
+			"after:deploy:deploy": this.afterDeployDeploy.bind(this)
 		};
 
 		this.configPlugin();
@@ -34,6 +35,10 @@ class Sentry {
 	}
 
 	validate() {
+		if (this._validated) {
+			// Already ran
+			return BbPromise.resolve();
+		}
 
 		// Check required serverless version
 		if (SemVer.gt("1.12.0", this._serverless.getVersion())) {
@@ -78,7 +83,12 @@ class Sentry {
 		.then(this.instrumentFunctions);
 	}
 
-	afterDeployFunctions() {
+	beforeDeployDeploy() {
+		return BbPromise.bind(this)
+		.then(this.validate);
+	}
+
+	afterDeployDeploy() {
 		return BbPromise.bind(this)
 		.then(this.createSentryRelease)
 		.then(this.deploySentryRelease);

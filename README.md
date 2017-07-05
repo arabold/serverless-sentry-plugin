@@ -5,8 +5,6 @@
 [![license](https://img.shields.io/github/license/arabold/serverless-sentry-plugin.svg)](https://github.com/arabold/serverless-sentry-plugin/blob/master/LICENSE)
 [![dependencies](https://img.shields.io/david/arabold/serverless-sentry-plugin.svg)](https://www.npmjs.com/package/serverless-sentry)
 
-This plugin simplifies automatic forwarding of errors and exceptions to Sentry
-(sentry.io) to Serverless 1.x.
 
 ## About
 This Serverless plugin simplifies integration of Sentry's
@@ -332,7 +330,12 @@ in the examples above.
 
 ## Version History
 
-### 1.0.0-rc.1 [WIP]
+### 1.0.0-rc.2
+
+* Fixed an issue with the plugin not being initialized properly when deploying
+  an existing artifact.
+
+### 1.0.0-rc.1
 
 * First official release of this plugin for use with Serverless 1.x
 * For older versions of this plugin that work with Serverless 0.5, see
