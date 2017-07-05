@@ -1,6 +1,5 @@
 const exec = require("child_process").exec
 	, BbPromise = require("bluebird")
-	, path = require("path")
 	, _ = require("lodash");
 
 
@@ -12,7 +11,7 @@ class GitRev {
 
 	_command(cmd) {
 		return new BbPromise((resolve, reject) => {
-			exec(cmd, { cwd: _.get(this.opts, "cwd") }, function (err, stdout /*, stderr */) {
+			exec(cmd, this.opts, function (err, stdout /*, stderr */) {
 				return err ? reject(err) : resolve(_.trim(_.replace(stdout, /\n/g, "")));
 			});
 		});
@@ -48,8 +47,7 @@ class GitRev {
 	}
 
 	origin() {
-		return this._command("git config --get remote.origin.url")
-		.then(str => _.last(_.split(str, path.sep)));
+		return this._command("git config --get remote.origin.url");
 	}
 }
 

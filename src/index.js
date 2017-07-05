@@ -105,40 +105,56 @@ class Sentry {
 
 	instrumentFunction(functionObject) {
 		const sentryConfig = _.assign({}, this.sentry, _.get(functionObject, "sentry"));
-		const envVars = {};
 
 		if (_.has(sentryConfig, "dsn")) {
-			functionObject.environment.SENTRY_DSN = sentryConfig.dsn;
+			_.set(functionObject, "environment.SENTRY_DSN", sentryConfig.dsn);
 		}
 		if (_.has(sentryConfig, "release.version")) {
-			functionObject.environment.SENTRY_RELEASE = sentryConfig.release.version;
+			_.set(functionObject, "environment.SENTRY_RELEASE", sentryConfig.release.version);
 		}
 		if (_.has(sentryConfig, "environment")) {
-			functionObject.environment.SENTRY_ENVIRONMENT = sentryConfig.environment;
+			_.set(functionObject, "environment.SENTRY_ENVIRONMENT", sentryConfig.environment);
 		}
 		if (_.has(sentryConfig, "autoBreadcrumbs")) {
-			functionObject.environment.SENTRY_AUTO_BREADCRUMBS = sentryConfig.autoBreadcrumbs;
+			_.set(functionObject, "environment.SENTRY_AUTO_BREADCRUMBS", sentryConfig.autoBreadcrumbs);
 		}
 		if (_.has(sentryConfig, "filterLocal")) {
-			functionObject.environment.SENTRY_FILTER_LOCAL = sentryConfig.filterLocal;
+			_.set(functionObject, "environment.SENTRY_FILTER_LOCAL", sentryConfig.filterLocal);
 		}
 		if (_.has(sentryConfig, "captureErrors")) {
-			functionObject.environment.SENTRY_CAPTURE_ERRORS = sentryConfig.captureErrors;
+			_.set(functionObject, "environment.SENTRY_CAPTURE_ERRORS", sentryConfig.captureErrors);
 		}
 		if (_.has(sentryConfig, "captureUnhandledRejections")) {
-			functionObject.environment.SENTRY_CAPTURE_UNHANDLED = sentryConfig.captureUnhandledRejections;
+			_.set(functionObject, "environment.SENTRY_CAPTURE_UNHANDLED", sentryConfig.captureUnhandledRejections);
 		}
 		if (_.has(sentryConfig, "captureMemoryWarnings")) {
-			functionObject.environment.SENTRY_CAPTURE_MEMORY = sentryConfig.captureMemoryWarnings;
+			_.set(functionObject, "environment.SENTRY_CAPTURE_MEMORY", sentryConfig.captureMemoryWarnings);
 		}
 		if (_.has(sentryConfig, "captureTimeoutWarnings")) {
-			functionObject.environment.SENTRY_CAPTURE_TIMEOUTS = sentryConfig.captureTimeoutWarnings;
+			_.set(functionObject, "environment.SENTRY_CAPTURE_TIMEOUTS", sentryConfig.captureTimeoutWarnings);
 		}
 
-		// Extend the function specific environment variables
-		functionObject.environment = _.assign(envVars, functionObject.environment);
-
 		return BbPromise.resolve(functionObject);
+	}
+
+	_resolveGitRefs(gitRev) {
+		return BbPromise.join(
+			gitRev.origin().then(str => str.match(/[:\/]([^\/]+\/[^\/]+?)(?:\.git)?$/i)[1]).catch(_.noop),
+			gitRev.long()
+		)
+		.spread((repository, commit) => {
+			_.forEach(_.get(this.sentry, "release.refs", []), ref => {
+				if (ref && ref.repository === "git") {
+					ref.repository = repository;
+				}
+				if (ref && ref.commit === "git") {
+					ref.commit = commit;
+				}
+				if (ref && ref.previousCommit === "git") {
+					delete ref.previousCommit; // not available via git
+				}
+			});
+		});
 	}
 
 	setRelease() {
@@ -161,22 +177,14 @@ class Sentry {
 				const gitRev = new GitRev({ cwd: this._serverless.config.servicePath });
 				return gitRev.tag()
 				.then(version => {
-					// Populate the refs (if not set manually already)
 					_.set(this.sentry, "release.version", version);
 					if (!_.has(this.sentry, "release.refs")) {
-						return BbPromise.join(
-							gitRev.origin()
-								.then(str => str.match(/[:\/]([^\/]+\/[^\/]+?)(\.git)?$/ig)[1])
-								.catch(_.noop),
-							gitRev.long()
-						)
-						.spread((repository, commit) => {
-							if (repository && commit) {
-								const refs = [{ repository, commit }];
-								_.set(this.sentry, "release.refs", refs);
-							}
-						});
+						// By default use git to resolve repository and commit hash
+						_.set(this.sentry, "release.refs", [{
+							repository: "git", commit: "git"
+						}]);
 					}
+					return this._resolveGitRefs(gitRev);
 				})
 				.catch(err => {
 					// No git available.
@@ -211,7 +219,6 @@ class Sentry {
 		const project = this.sentry.project;
 		const release = this.sentry.release;
 		this._serverless.cli.log(`Sentry: Creating new release "${release.version}"...`);
-
 		return BbPromise.fromCallback(cb =>
 			request.post(`https://sentry.io/api/0/organizations/${organization}/releases/`)
 			.set("Authorization", `Bearer ${this.sentry.authToken}`)
