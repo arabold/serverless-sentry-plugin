@@ -18,10 +18,29 @@ class Sentry {
 		this._provider = this._serverless.getProvider("aws");
 
 		this.hooks = {
-			"before:package:initialize": this.beforePackageInitialize.bind(this),
-			"after:package:initialize": this.afterPackageInitialize.bind(this),
-			"before:deploy:deploy": this.beforeDeployDeploy.bind(this),
-			"after:deploy:deploy": this.afterDeployDeploy.bind(this)
+			"before:package:initialize": () => BbPromise.bind(this)
+				.then(this.validate),
+
+			"after:package:initialize": () => BbPromise.bind(this)
+				.then(this.setRelease)
+				.then(this.instrumentFunctions),
+
+			"before:deploy:deploy": () => BbPromise.bind(this)
+				.then(this.validate),
+
+			"after:deploy:deploy": () => BbPromise.bind(this)
+				.then(this.createSentryRelease)
+				.then(this.deploySentryRelease),
+
+			"before:offline:start": () => BbPromise.bind(this)
+				.then(this.validate)
+				.then(this.setRelease)
+				.then(this.instrumentFunctions),
+
+			"before:offline:start:init": () => BbPromise.bind(this)
+				.then(this.validate)
+				.then(this.setRelease)
+				.then(this.instrumentFunctions)
 		};
 
 		this.configPlugin();
@@ -72,28 +91,6 @@ class Sentry {
 		});
 	}
 
-	beforePackageInitialize() {
-		return BbPromise.bind(this)
-		.then(this.validate);
-	}
-
-	afterPackageInitialize() {
-		return BbPromise.bind(this)
-		.then(this.setRelease)
-		.then(this.instrumentFunctions);
-	}
-
-	beforeDeployDeploy() {
-		return BbPromise.bind(this)
-		.then(this.validate);
-	}
-
-	afterDeployDeploy() {
-		return BbPromise.bind(this)
-		.then(this.createSentryRelease)
-		.then(this.deploySentryRelease);
-	}
-
 	instrumentFunctions() {
 		// Get functions
 		const allFunctions = this._serverless.service.getAllFunctions();
@@ -102,7 +99,7 @@ class Sentry {
 		return BbPromise.map(allFunctions, functionName => this._serverless.service.getFunction(functionName))
 		.filter(functionObject => {
 			// Check if function should be instrumented
-			return (_.get(functionObject, "sentry", true) === true);
+			return (_.get(functionObject, "sentry", true) !== false);
 		})
 		.then(functionObjects => {
 			if (!functionObjects.length) {
@@ -114,7 +111,11 @@ class Sentry {
 	}
 
 	instrumentFunction(functionObject) {
-		const sentryConfig = _.assign({}, this.sentry, _.get(functionObject, "sentry"));
+		const sentryConfig = _.clone(this.sentry);
+		const localConfig = _.get(functionObject, "sentry");
+		if (_.isPlainObject(localConfig)) {
+			_.assign(sentryConfig, localConfig);
+		}
 
 		if (_.has(sentryConfig, "dsn")) {
 			_.set(functionObject, "environment.SENTRY_DSN", sentryConfig.dsn);

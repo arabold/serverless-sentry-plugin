@@ -268,16 +268,17 @@ plugins:
 custom:
   sentry:
     dsn: https://xxxx:yyyy@sentry.io/zzzz # URL provided by Sentry
-    organization: my-sentry-organziation
-    project: my-sentry-project
-    authToken: my-sentry-api-key
-    release: git
+    captureTimeoutWarnings: false # disable timeout warnings globally for all functions
 functions:
-  HelloWorld:
-    handler: hello.handler
+  FuncFoo:
+    handler: Foo.handler
     description: Hello World
     sentry:
       captureErrors: false # Disable error capturing for this specific function only
+      captureTimeoutWarnings: true # Turn timeout warnings back on
+  FuncBar:
+    handler: Bar.handler
+    sentry: false # completely turn off Sentry reporting
 ```
 
 
@@ -327,8 +328,18 @@ the rest of your code. This is typically not what you want. Make sure to pass
 in the Raven instance during initialization of the `RavenLambdaWrapper` as shown
 in the examples above.
 
+### Raven throws an uncaught error: Cannot read property 'user' of undefined
+Raven is not initialized properly. If you're running in a local environment try
+setting the `filterLocal` option to `false`.
+
 
 ## Version History
+
+### 1.0.0-rc.3
+
+* Allow disabling Sentry for specific functions by settings `sentry: false` in
+  the `serverless.yml`.
+* Added support for the [Serverless Offline Plugin](https://github.com/dherault/serverless-offline).
 
 ### 1.0.0-rc.2
 
