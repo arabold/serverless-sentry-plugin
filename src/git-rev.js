@@ -1,3 +1,5 @@
+"use strict";
+
 const exec = require("child_process").exec
 	, BbPromise = require("bluebird")
 	, _ = require("lodash");
