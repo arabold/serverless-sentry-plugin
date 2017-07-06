@@ -329,8 +329,16 @@ in the Raven instance during initialization of the `RavenLambdaWrapper` as shown
 in the examples above.
 
 ### Raven throws an uncaught error: Cannot read property 'user' of undefined
-Raven is not initialized properly. If you're running in a local environment try
-setting the `filterLocal` option to `false`.
+Raven is not initialized correctly. If you use `raven-node` directly you must
+either pass in the `Raven` class to the `RavenLambdaWrapper.handler()` function
+as shown in step 2 above, or manually initialize your instance of the raven
+module.
+
+### I'm testing my Raven integration locally but no errors or messages are reported
+Check out the `filterLocal` configuration setting. If you test Raven locally and
+want to make sure your messages are sent, set this flag to `false`. Once done
+testing, don't forget to switch it back to `true` as otherwise you'll spam your
+Sentry projects with meaningless errors of local code changes.
 
 
 ## Version History
@@ -358,3 +366,5 @@ setting the `filterLocal` option to `false`.
 - [ ] Optionally upload external source-maps to Sentry
 - [ ] Provide CLI commands to create releases and perform other operations in
       Sentry
+- [ ] Ensure all exceptions and messages have been sent to Sentry before
+      returning; see [#338](https://github.com/getsentry/raven-node/issues/338).
