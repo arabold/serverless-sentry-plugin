@@ -7,13 +7,12 @@
 
 
 ## About
-This Serverless plugin simplifies integration of Sentry's
-[node-raven](https://docs.sentry.io/clients/node/) library with the popular
-[Serverless Framework]() and AWS Lambda.
+This Serverless plugin simplifies integration of [Sentry](https://sentry.io)
+with the popular [Serverless Framework](https://serverless.com) and AWS Lambda.
 
-Currently we support Node.js 4.3.2 and 6.10.2 on Amazon Web Services.
-Other platforms can be added easily by providing a respective integration
-library. Pull Requests are welcome!
+Currently we support **Node.js 4.3.2**, **Node.js 6.10.2** as well as
+**Python** running on AWS Lambda. Other platforms can be added by
+providing a respective integration library. Pull Requests are welcome!
 
 
 ### What is Raven and Sentry?
@@ -30,7 +29,7 @@ Serverless but developed independently and in my spare time.
 
 * Easy to use.
 * Integrates with [Serverless Framework](http://www.serverless.com) for AWS Lambda.
-* Wraps your Node.js code with [Sentry](http://getsentry.com) error capturing.
+* Wraps your Node.js and Python code with [Sentry](http://sentry.io) error capturing.
 * Forwards any errors returned by your AWS Lambda function to Sentry.
 * Warn if your code is about to hit the execution timeout limit.
 * Warn if your Lambda function is low on memory.
@@ -99,17 +98,26 @@ custom:
 ```
 
 ### ▶️ Step 2: Wrap Your Function Handler Code
-`serverless-sentry-lib` acts as a wrapper around your original AWS Lambda
-handler code (your `handler.js` or similar). The `RavenLambdaWrapper` adds
-error and exception handling, and takes care of configuring the Raven client
-automatically.
 
-The `RavenLambdaWrapper` is pre-configured to reasonable defaults and
-doesn't need additional setup. Simply pass in your Raven client to the wrapper
-function as shown below - that's it. Passing in your own `Raven` client is
-necessary to ensure that the wrapper uses the same environment as the rest
-of your code. In the rare circumstances that this isn't desired, you can
-pass in `null` instead.
+The actual reporting to Sentry happens in platform specific libraries. Currently
+only Node.js and Python are supported.
+
+Each library provides a `RavenLambdaWrapper` helper that act as decorators
+around your original AWS Lambda handler code and is configured via this
+plugin or manually through environment variables.
+
+For more details refer to the individual libraries' repositories:
+
+* Node.js: [serverless-sentry-lib](https://github.com/arabold/serverless-sentry-lib)
+* Python: [Netflix-Skunkworks/raven-python-lambda](https://github.com/Netflix-Skunkworks/raven-python-lambda)
+
+
+#### Node.js
+Import `RavenLambdaWrapper` from the `serverless-sentry-lib` Node.js module
+and pass in your `Raven` client as shown below - that's it.
+Passing in your own client is necessary to ensure that the wrapper uses
+the same environment as the rest of your code. In the rare circumstances that
+this isn't desired, you can pass in `null` instead.
 
 **Original Lambda Handler Code Before Adding RavenLambdaWrapper**:
 ```js
@@ -134,6 +142,30 @@ module.exports.hello = RavenLambdaWrapper.handler(Raven, (event, context, callba
 
 For more details about the different configuration options available refer to
 the [serverless-sentry-lib documentation](https://github.com/arabold/serverless-sentry-lib/blob/master/README.md).
+
+
+#### Python 🐍
+Import `RavenLambdaWrapper` from the `raven-python-lambda` module as shown
+below:
+
+**Original Lambda Handler Code Before Adding RavenLambdaWrapper**:
+```python
+def handler(event, context):
+    print("Go Serverless! Your function executed successfully")
+```
+
+**New Lambda Handler Code With RavenLambdaWrapper For Sentry Reporting**
+```python
+from raven import Client # Offical `raven` module
+from raven-python-lambda import RavenLambdaWrapper
+
+@RavenLambdaWrapper()
+def handler(event, context):
+    print("Go Serverless! Your function executed successfully")
+```
+
+For more details about the Python integration refer to official repository
+at [Netflix-Skunkworks/raven-python-lambda](https://github.com/Netflix-Skunkworks/raven-python-lambda)
 
 
 ## Plugin Configuration Options
