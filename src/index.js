@@ -276,7 +276,7 @@ class Sentry {
 	}
 
 	getRandomVersion() {
-		return BbPromise.resolve(_.replace(uuid(), /\-/g, ""));
+		return _.replace(uuid(), /\-/g, "");
 	}
 }
 

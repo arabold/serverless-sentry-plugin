@@ -343,6 +343,9 @@ Sentry projects with meaningless errors of local code changes.
 
 ## Version History
 
+### 1.0.0-rc.4
+* Fixed an issue with creating random version numbers
+
 ### 1.0.0-rc.3
 
 * Allow disabling Sentry for specific functions by settings `sentry: false` in
