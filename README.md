@@ -375,6 +375,11 @@ Sentry projects with meaningless errors of local code changes.
 
 ## Version History
 
+### 1.0.0
+* Version falls back to git hash if no tag is set for current head (#15).
+* Fixed reporting bugs in local environment despite config telling otherwise (#17).
+  This requires an update of `serverless-sentry-lib` as well!
+
 ### 1.0.0-rc.4
 * Fixed an issue with creating random version numbers
 

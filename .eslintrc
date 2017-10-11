@@ -6,19 +6,12 @@ env:
 extends:
   - eslint:recommended
 rules:
-  indent:
-    - error
-    - tab
-  linebreak-style:
-    - error
-    - unix
-  semi:
-    - error
-    - always
-  quotes:
-    - error
-    - double
-    - avoidEscape: true
+  indent: [ error, tab, {
+    MemberExpression: off
+  } ]
+  linebreak-style: [ error, unix ]
+  semi: [ error, always ]
+  quotes: [ error, double, { avoidEscape: true } ]
   no-mixed-spaces-and-tabs: error
   space-before-blocks: error
   arrow-spacing: error
@@ -29,3 +22,6 @@ rules:
   array-bracket-spacing: off # [ error, always, { singleValue: false } ]
   computed-property-spacing: [ error, never ]
   object-curly-spacing: [ error, always ]
+  prefer-const: error
+  no-var: error
+  no-console: off

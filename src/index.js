@@ -150,7 +150,7 @@ class Sentry {
 
 	_resolveGitRefs(gitRev) {
 		return BbPromise.join(
-			gitRev.origin().then(str => str.match(/[:\/]([^\/]+\/[^\/]+?)(?:\.git)?$/i)[1]).catch(_.noop),
+			gitRev.origin().then(str => str.match(/[:/]([^/]+\/[^/]+?)(?:\.git)?$/i)[1]).catch(_.noop),
 			gitRev.long()
 		)
 		.spread((repository, commit) => {
@@ -186,7 +186,14 @@ class Sentry {
 		return BbPromise.try(() => {
 			if (version === true || version === "true" || version === "git") {
 				const gitRev = new GitRev({ cwd: this._serverless.config.servicePath });
-				return gitRev.tag()
+				return gitRev.exactTag()
+				.then(version => {
+					if (_.isEmpty(version)) {
+						// No tag set for current HEAD; use the hash instead
+						return gitRev.short();
+					}
+					return version;
+				})
 				.then(version => {
 					_.set(this.sentry, "release.version", version);
 					if (!_.has(this.sentry, "release.refs")) {
@@ -276,7 +283,7 @@ class Sentry {
 	}
 
 	getRandomVersion() {
-		return _.replace(uuid(), /\-/g, "");
+		return _.replace(uuid(), /-/g, "");
 	}
 }
 
