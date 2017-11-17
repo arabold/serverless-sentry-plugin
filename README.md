@@ -157,7 +157,7 @@ def handler(event, context):
 **New Lambda Handler Code With RavenLambdaWrapper For Sentry Reporting**
 ```python
 from raven import Client # Offical `raven` module
-from raven-python-lambda import RavenLambdaWrapper
+from raven_python_lambda import RavenLambdaWrapper
 
 @RavenLambdaWrapper()
 def handler(event, context):
