@@ -91,7 +91,7 @@ service: my-serverless-project
 provider:
   # ...
 plugins:
-  serverless-sentry
+  - serverless-sentry
 custom:
   sentry:
     dsn: https://xxxx:yyyy@sentry.io/zzzz # URL provided by Sentry
@@ -296,7 +296,7 @@ service: my-serverless-project
 provider:
   # ...
 plugins:
-  serverless-sentry
+  - serverless-sentry
 custom:
   sentry:
     dsn: https://xxxx:yyyy@sentry.io/zzzz # URL provided by Sentry
@@ -329,7 +329,7 @@ Also make sure to add the plugin to your plugins list in the `serverless.yml`:
 
 ```yaml
 plugins:
-  serverless-sentry
+  - serverless-sentry
 custom:
   sentry:
     dsn: https://xxxx:yyyy@sentry.io/zzzz # URL provided by Sentry
@@ -342,7 +342,7 @@ the example below:
 
 ```yaml
 plugins:
-  serverless-sentry
+  - serverless-sentry
 custom:
   sentry:
     dsn: https://xxxx:yyyy@sentry.io/zzzz # URL provided by Sentry
