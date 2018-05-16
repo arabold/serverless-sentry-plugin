@@ -31,6 +31,11 @@ class Sentry {
 			"after:deploy:deploy": () => BbPromise.bind(this)
 				.then(this.createSentryRelease)
 				.then(this.deploySentryRelease),
+			
+			"before:invoke:local:invoke": () => BbPromise.bind(this)
+				.then(this.validate)
+				.then(this.setRelease)
+				.then(this.instrumentFunctions),
 
 			"before:offline:start": () => BbPromise.bind(this)
 				.then(this.validate)
