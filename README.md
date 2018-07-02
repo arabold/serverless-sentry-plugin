@@ -10,7 +10,7 @@
 This Serverless plugin simplifies integration of [Sentry](https://sentry.io)
 with the popular [Serverless Framework](https://serverless.com) and AWS Lambda.
 
-Currently we support **Node.js 4.3.2**, **Node.js 6.10.2** as well as
+Currently we support **Node.js 6.10**, **Node.js 8.10** as well as
 **Python** running on AWS Lambda. Other platforms can be added by
 providing a respective integration library. Pull Requests are welcome!
 
@@ -375,7 +375,13 @@ Sentry projects with meaningless errors of local code changes.
 
 ## Version History
 
+### 1.1.0
+
+* ⚠️ Dropped support for Node 4.3. AWS deprecates Node 4.3 starting July 31, 2018.
+* Pair with `serverless-sentry-lib` v1.1.0.
+
 ### 1.0.0
+
 * Version falls back to git hash if no tag is set for current head (#15).
 * Fixed reporting bugs in local environment despite config telling otherwise (#17).
   This requires an update of `serverless-sentry-lib` as well!
