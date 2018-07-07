@@ -375,10 +375,15 @@ Sentry projects with meaningless errors of local code changes.
 
 ## Version History
 
+### 1.1.1
+
+* Support for `sls invoke local`. Thanks to [sifrenette](https://github.com/sifrenette)
+  for his contribution.
+
 ### 1.1.0
 
 * ⚠️ Dropped support for Node 4.3. AWS deprecates Node 4.3 starting July 31, 2018.
-* Pair with `serverless-sentry-lib` v1.1.0.
+* Pair with `serverless-sentry-lib` v1.1.x.
 
 ### 1.0.0
 
