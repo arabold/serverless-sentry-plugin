@@ -122,32 +122,33 @@ class Sentry {
 			_.assign(sentryConfig, localConfig);
 		}
 
+		// Environment variables have to be a string in order to be processed properly
 		if (_.has(sentryConfig, "dsn")) {
-			_.set(functionObject, "environment.SENTRY_DSN", sentryConfig.dsn);
+			_.set(functionObject, "environment.SENTRY_DSN", String(sentryConfig.dsn));
 		}
 		if (_.has(sentryConfig, "release.version")) {
-			_.set(functionObject, "environment.SENTRY_RELEASE", sentryConfig.release.version);
+			_.set(functionObject, "environment.SENTRY_RELEASE", String(sentryConfig.release.version));
 		}
 		if (_.has(sentryConfig, "environment")) {
-			_.set(functionObject, "environment.SENTRY_ENVIRONMENT", sentryConfig.environment);
+			_.set(functionObject, "environment.SENTRY_ENVIRONMENT", String(sentryConfig.environment));
 		}
 		if (_.has(sentryConfig, "autoBreadcrumbs")) {
-			_.set(functionObject, "environment.SENTRY_AUTO_BREADCRUMBS", sentryConfig.autoBreadcrumbs);
+			_.set(functionObject, "environment.SENTRY_AUTO_BREADCRUMBS", String(sentryConfig.autoBreadcrumbs));
 		}
 		if (_.has(sentryConfig, "filterLocal")) {
-			_.set(functionObject, "environment.SENTRY_FILTER_LOCAL", sentryConfig.filterLocal);
+			_.set(functionObject, "environment.SENTRY_FILTER_LOCAL", String(sentryConfig.filterLocal));
 		}
 		if (_.has(sentryConfig, "captureErrors")) {
-			_.set(functionObject, "environment.SENTRY_CAPTURE_ERRORS", sentryConfig.captureErrors);
+			_.set(functionObject, "environment.SENTRY_CAPTURE_ERRORS", String(sentryConfig.captureErrors));
 		}
 		if (_.has(sentryConfig, "captureUnhandledRejections")) {
-			_.set(functionObject, "environment.SENTRY_CAPTURE_UNHANDLED", sentryConfig.captureUnhandledRejections);
+			_.set(functionObject, "environment.SENTRY_CAPTURE_UNHANDLED", String(sentryConfig.captureUnhandledRejections));
 		}
 		if (_.has(sentryConfig, "captureMemoryWarnings")) {
-			_.set(functionObject, "environment.SENTRY_CAPTURE_MEMORY", sentryConfig.captureMemoryWarnings);
+			_.set(functionObject, "environment.SENTRY_CAPTURE_MEMORY", String(sentryConfig.captureMemoryWarnings));
 		}
 		if (_.has(sentryConfig, "captureTimeoutWarnings")) {
-			_.set(functionObject, "environment.SENTRY_CAPTURE_TIMEOUTS", sentryConfig.captureTimeoutWarnings);
+			_.set(functionObject, "environment.SENTRY_CAPTURE_TIMEOUTS", String(sentryConfig.captureTimeoutWarnings));
 		}
 
 		return BbPromise.resolve(functionObject);

@@ -119,7 +119,8 @@ Passing in your own client is necessary to ensure that the wrapper uses
 the same environment as the rest of your code. In the rare circumstances that
 this isn't desired, you can pass in `null` instead.
 
-**Original Lambda Handler Code Before Adding RavenLambdaWrapper**:
+
+**ES2015: Original Lambda Handler Code Before Adding RavenLambdaWrapper**:
 ```js
 "use strict";
 
@@ -128,15 +129,34 @@ module.exports.hello = function(event, context, callback) {
 };
 ```
 
-**New Lambda Handler Code With RavenLambdaWrapper For Sentry Reporting**
+**ES2015: New Lambda Handler Code With RavenLambdaWrapper For Sentry Reporting**
 ```js
 "use strict";
 
 const Raven = require("raven"); // Official `raven` module
-const RavenLambdaWrapper = require("serverless-sentry-lib");
+const RavenLambdaWrapper = require("serverless-sentry-lib"); // This helper library
 
 module.exports.hello = RavenLambdaWrapper.handler(Raven, (event, context, callback) => {
+  // Here follows your original Lambda handler code...
   callback(null, { message: 'Go Serverless! Your function executed successfully!', event });
+});
+```
+
+**ES2017: Original Lambda Handler Code Before Adding RavenLambdaWrapper**:
+```js
+exports.handler = async (event, context) => {
+  return { message: 'Go Serverless! Your function executed successfully!', event };
+};
+```
+
+**ES2017: New Lambda Handler Code With RavenLambdaWrapper For Sentry Reporting**
+```js
+const Raven = require("raven"); // Official `raven` module
+const RavenLambdaWrapper = require("serverless-sentry-lib"); // This helper library
+
+exports.handler = RavenLambdaWrapper.handler(Raven, async (event, context) => {
+  // Here follows your original Lambda handler code...
+  return { message: 'Go Serverless! Your function executed successfully!', event };
 });
 ```
 
@@ -374,6 +394,10 @@ Sentry projects with meaningless errors of local code changes.
 
 
 ## Version History
+
+### 1.2.0
+
+* Fixed a compatibility issue with Serverless 1.28.0.
 
 ### 1.1.1
 
