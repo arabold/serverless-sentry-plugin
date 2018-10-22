@@ -160,17 +160,22 @@ class Sentry {
 			gitRev.long()
 		)
 		.spread((repository, commit) => {
-			_.forEach(_.get(this.sentry, "release.refs", []), ref => {
-				if (ref && ref.repository === "git") {
-					ref.repository = repository;
-				}
-				if (ref && ref.commit === "git") {
-					ref.commit = commit;
-				}
-				if (ref && ref.previousCommit === "git") {
-					delete ref.previousCommit; // not available via git
-				}
-			});
+			if (repository) {
+				_.forEach(_.get(this.sentry, "release.refs", []), ref => {
+					process.env.SLS_DEBUG && this._serverless.cli.log('repository:',JSON.stringify(repository));
+					if (ref && ref.repository === "git") {
+						ref.repository = repository;
+					}
+					if (ref && ref.commit === "git") {
+						ref.commit = commit;
+					}
+					if (ref && ref.previousCommit === "git") {
+						delete ref.previousCommit; // not available via git
+					}
+				});
+			} else { // no remote origin found
+				_.unset( this.sentry,"release.refs")
+			}
 		});
 	}
 
