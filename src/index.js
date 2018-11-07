@@ -160,7 +160,7 @@ class Sentry {
 			gitRev.long()
 		)
 		.spread((repository, commit) => {
-			if (repository) {
+			if (!(this.sentry.release.refs===false) && repository) {
 				_.forEach(_.get(this.sentry, "release.refs", []), ref => {
 					process.env.SLS_DEBUG && this._serverless.cli.log('repository:',JSON.stringify(repository));
 					if (ref && ref.repository === "git") {

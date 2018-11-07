@@ -250,6 +250,10 @@ custom:
   about how to use commit refs. If you set your `version` to `git` (or `true`),
   the `refs` options are populated automatically and don't need to be set.
 
+👉 **Tip:** If your repository provider is not supported by Sentry (currently 
+only github) you need to explicitly set `refs: false` to avoid the automatically 
+population!
+
 If you don't specify any refs, you can also use the short notation for `release`
 and simply set it to the desired release version as follows:
 
