@@ -26,12 +26,14 @@ class Sentry {
 				.then(this.instrumentFunctions),
 
 			"before:deploy:deploy": () => BbPromise.bind(this)
-				.then(this.validate),
+				.then(this.validate)
+				.then(this.setRelease)
+				.then(this.instrumentFunctions),
 
 			"after:deploy:deploy": () => BbPromise.bind(this)
 				.then(this.createSentryRelease)
 				.then(this.deploySentryRelease),
-			
+
 			"before:invoke:local:invoke": () => BbPromise.bind(this)
 				.then(this.validate)
 				.then(this.setRelease)
@@ -74,26 +76,26 @@ class Sentry {
 		this._validated = true;
 
 		return this._serverless.variables.populateObject(this.sentry)
-		.then(populatedObject => {
-			this.sentry = populatedObject;
+			.then(populatedObject => {
+				this.sentry = populatedObject;
 
-			// Validate Sentry options
-			if (!this.sentry.dsn) {
-				return BbPromise.reject(new this._serverless.classes.Error("Sentry DSN must be set."));
-			}
+				// Validate Sentry options
+				if (!this.sentry.dsn) {
+					return BbPromise.reject(new this._serverless.classes.Error("Sentry DSN must be set."));
+				}
 
-			// Set default option values
-			if (!this.sentry.environment) {
-				this.sentry.environment = this._stage;
-			}
+				// Set default option values
+				if (!this.sentry.environment) {
+					this.sentry.environment = this._stage;
+				}
 
-			if (this.sentry.authToken && (!this.sentry.organization || !this.sentry.project)) {
-				this._serverless.cli.log("Sentry: In order to use the Sentry API " +
-					"make sure to set `organization` and `project` in your `serverless.yml`.");
-				_.unset(this.sentry, "authToken");
-			}
-			return BbPromise.resolve();
-		});
+				if (this.sentry.authToken && (!this.sentry.organization || !this.sentry.project)) {
+					this._serverless.cli.log("Sentry: In order to use the Sentry API " +
+						"make sure to set `organization` and `project` in your `serverless.yml`.");
+					_.unset(this.sentry, "authToken");
+				}
+				return BbPromise.resolve();
+			});
 	}
 
 	instrumentFunctions() {
@@ -102,17 +104,17 @@ class Sentry {
 
 		// Filter functions for instrumentations
 		return BbPromise.map(allFunctions, functionName => this._serverless.service.getFunction(functionName))
-		.filter(functionObject => {
-			// Check if function should be instrumented
-			return (_.get(functionObject, "sentry", true) !== false);
-		})
-		.then(functionObjects => {
-			if (!functionObjects.length) {
-				return true;
-			}
+			.filter(functionObject => {
+				// Check if function should be instrumented
+				return (_.get(functionObject, "sentry", true) !== false);
+			})
+			.then(functionObjects => {
+				if (!functionObjects.length) {
+					return true;
+				}
 
-			return BbPromise.each(functionObjects, functionObject => this.instrumentFunction(functionObject));
-		});
+				return BbPromise.each(functionObjects, functionObject => this.instrumentFunction(functionObject));
+			});
 	}
 
 	instrumentFunction(functionObject) {
@@ -159,19 +161,19 @@ class Sentry {
 			gitRev.origin().then(str => str.match(/[:/]([^/]+\/[^/]+?)(?:\.git)?$/i)[1]).catch(_.noop),
 			gitRev.long()
 		)
-		.spread((repository, commit) => {
-			_.forEach(_.get(this.sentry, "release.refs", []), ref => {
-				if (ref && ref.repository === "git") {
-					ref.repository = repository;
-				}
-				if (ref && ref.commit === "git") {
-					ref.commit = commit;
-				}
-				if (ref && ref.previousCommit === "git") {
-					delete ref.previousCommit; // not available via git
-				}
+			.spread((repository, commit) => {
+				_.forEach(_.get(this.sentry, "release.refs", []), ref => {
+					if (ref && ref.repository === "git") {
+						ref.repository = repository;
+					}
+					if (ref && ref.commit === "git") {
+						ref.commit = commit;
+					}
+					if (ref && ref.previousCommit === "git") {
+						delete ref.previousCommit; // not available via git
+					}
+				});
 			});
-		});
 	}
 
 	setRelease() {
@@ -193,33 +195,33 @@ class Sentry {
 			if (version === true || version === "true" || version === "git") {
 				const gitRev = new GitRev({ cwd: this._serverless.config.servicePath });
 				return gitRev.exactTag()
-				.then(version => {
-					if (_.isEmpty(version)) {
-						// No tag set for current HEAD; use the hash instead
-						return gitRev.short();
-					}
-					return version;
-				})
-				.then(version => {
-					_.set(this.sentry, "release.version", version);
-					if (!_.has(this.sentry, "release.refs")) {
-						// By default use git to resolve repository and commit hash
-						_.set(this.sentry, "release.refs", [{
-							repository: "git", commit: "git"
-						}]);
-					}
-					return this._resolveGitRefs(gitRev);
-				})
-				.catch(err => {
-					// No git available.
-					if (version === "git") {
-						// Error out
-						return BbPromise.reject(new this._serverless.classes.Error(`Sentry: No Git available - ${err.toString()}`));
-					}
-					// Fall back to use a random number instead.
-					process.env.SLS_DEBUG && this._serverless.cli.log("Sentry: No Git available. Creating a random release version...");
-					_.set(this.sentry, "release.version", this.getRandomVersion());
-				});
+					.then(version => {
+						if (_.isEmpty(version)) {
+							// No tag set for current HEAD; use the hash instead
+							return gitRev.short();
+						}
+						return version;
+					})
+					.then(version => {
+						_.set(this.sentry, "release.version", version);
+						if (!_.has(this.sentry, "release.refs")) {
+							// By default use git to resolve repository and commit hash
+							_.set(this.sentry, "release.refs", [{
+								repository: "git", commit: "git"
+							}]);
+						}
+						return this._resolveGitRefs(gitRev);
+					})
+					.catch(err => {
+						// No git available.
+						if (version === "git") {
+							// Error out
+							return BbPromise.reject(new this._serverless.classes.Error(`Sentry: No Git available - ${err.toString()}`));
+						}
+						// Fall back to use a random number instead.
+						process.env.SLS_DEBUG && this._serverless.cli.log("Sentry: No Git available. Creating a random release version...");
+						_.set(this.sentry, "release.version", this.getRandomVersion());
+					});
 			}
 			else if (version === "random") {
 				process.env.SLS_DEBUG && this._serverless.cli.log("Sentry: Creating a random release version...");
@@ -245,20 +247,20 @@ class Sentry {
 		this._serverless.cli.log(`Sentry: Creating new release "${release.version}"...`);
 		return BbPromise.fromCallback(cb =>
 			request.post(`https://sentry.io/api/0/organizations/${organization}/releases/`)
-			.set("Authorization", `Bearer ${this.sentry.authToken}`)
-			.send({
-				version: release.version,
-				refs: release.refs,
-				projects: [ project ]
-			})
-			.end(cb)
+				.set("Authorization", `Bearer ${this.sentry.authToken}`)
+				.send({
+					version: release.version,
+					refs: release.refs,
+					projects: [ project ]
+				})
+				.end(cb)
 		)
-		.catch(err => {
-			if (err && err.response && err.response.text) {
-				this._serverless.cli.log(`Sentry: Received error response from Sentry:\n${err.response.text}`);
-			}
-			return BbPromise.reject(new this._serverless.classes.Error("Sentry: Error uploading release - " + err.toString()));
-		});
+			.catch(err => {
+				if (err && err.response && err.response.text) {
+					this._serverless.cli.log(`Sentry: Received error response from Sentry:\n${err.response.text}`);
+				}
+				return BbPromise.reject(new this._serverless.classes.Error("Sentry: Error uploading release - " + err.toString()));
+			});
 	}
 
 	deploySentryRelease() {
@@ -273,19 +275,19 @@ class Sentry {
 
 		return BbPromise.fromCallback(cb =>
 			request.post(`https://sentry.io/api/0/organizations/${organization}/releases/${encodeURIComponent(release.version)}/deploys/`)
-			.set("Authorization", `Bearer ${this.sentry.authToken}`)
-			.send({
-				environment: this.sentry.environment,
-				name: `Deployed ${this._serverless.service.service}`
-			})
-			.end(cb)
+				.set("Authorization", `Bearer ${this.sentry.authToken}`)
+				.send({
+					environment: this.sentry.environment,
+					name: `Deployed ${this._serverless.service.service}`
+				})
+				.end(cb)
 		)
-		.catch(err => {
-			if (err && err.response && err.response.text) {
-				this._serverless.cli.log(`Sentry: Received error response from Sentry:\n${err.response.text}`);
-			}
-			return BbPromise.reject(new this._serverless.classes.Error("Sentry: Error deploying release - " + err.toString()));
-		});
+			.catch(err => {
+				if (err && err.response && err.response.text) {
+					this._serverless.cli.log(`Sentry: Received error response from Sentry:\n${err.response.text}`);
+				}
+				return BbPromise.reject(new this._serverless.classes.Error("Sentry: Error deploying release - " + err.toString()));
+			});
 	}
 
 	getRandomVersion() {
