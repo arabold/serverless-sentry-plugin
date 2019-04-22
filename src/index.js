@@ -156,9 +156,22 @@ class Sentry {
 
 	_resolveGitRefs(gitRev) {
 		return BbPromise.join(
-			gitRev.origin().then(str => str.match(/[:/]([^/]+\/[^/]+?)(?:\.git)?$/i)[1]).catch(_.noop),
+			gitRev.origin(),
 			gitRev.long()
 		)
+		.spread((origin, commit) => {
+			let repository = null;
+			try {
+				repository = origin.match(/[:/]([^/]+\/[^/]+?)(?:\.git)?$/i)[1];
+				if(_.includes(origin, 'gitlab')) {
+					// gitlab uses spaces around the slashes in the repository name
+					repository = repository.replace(/\//g, ' / ');
+				}
+			} catch (err) {
+
+			}
+			return BbPromise.join(repository, commit);
+		})
 		.spread((repository, commit) => {
 			_.forEach(_.get(this.sentry, "release.refs", []), ref => {
 				if (ref && ref.repository === "git") {
