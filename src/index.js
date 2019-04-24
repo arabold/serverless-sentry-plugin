@@ -261,6 +261,13 @@ class Sentry {
 		.catch(err => {
 			if (err && err.response && err.response.text) {
 				this._serverless.cli.log(`Sentry: Received error response from Sentry:\n${err.response.text}`);
+				this._serverless.cli.log(
+					`Sentry: sent configuration: ${JSON.stringify({
+						version: release.version,
+						refs: release.refs,
+						projects: [project]
+					})}`
+				);
 			}
 			return BbPromise.reject(new this._serverless.classes.Error("Sentry: Error uploading release - " + err.toString()));
 		});
