@@ -43,7 +43,7 @@
     "getsentry.com"
   ],
   "peerDependencies": {
-    "serverless-sentry-lib": "^2.0.0"
+    "serverless-sentry-lib": "2.x.x"
   },
   "dependencies": {
     "@types/serverless": "^1.67.1",

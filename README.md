@@ -7,26 +7,24 @@
 
 ## About
 
-This Serverless plugin simplifies integration of [Sentry](https://sentry.io)
-with the popular [Serverless Framework](https://serverless.com) and AWS Lambda.
+This Serverless plugin simplifies integration of [Sentry](https://sentry.io) with the popular [Serverless Framework](https://serverless.com) and AWS Lambda.
 
-Currently we support **Node.js 6.10**, **Node.js 8.10** as well as
-**Python** running on AWS Lambda. Other platforms can be added by
-providing a respective integration library. Pull Requests are welcome!
+Currently we support [Lambda Runtimes for Node.js 10 and 12](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html) for AWS Lambda. Other platforms can be added by providing a respective integration library. Pull Requests are welcome!
 
 The `serverless-sentry-plugin` and `serverless-sentry-lib` libraries are not affiliated with either Functional Software Inc., Sentry, Serverless or Amazon Web Services but developed independently and in my spare time.
 
 ### Benefits
 
-- Easy to use.
-- Integrates with [Serverless Framework](http://www.serverless.com) for AWS Lambda.
-- Wraps your Node.js and Python code with [Sentry](http://sentry.io) error capturing.
+- Easy to use. Promised 🤞
+- Integrates with [Serverless Framework](http://www.serverless.com) as well as the [AWS Serverless Application Model](https://aws.amazon.com/serverless/sam/) for AWS Lambda (though no use any framework is required).
+- Wraps your Node.js code with [Sentry](http://getsentry.com) error capturing.
 - Forwards any errors returned by your AWS Lambda function to Sentry.
 - Warn if your code is about to hit the execution timeout limit.
 - Warn if your Lambda function is low on memory.
-- Catches and reports unhandled exceptions.
-- Automated release creation and deployment notifications for Sentry.
+- Reports unhandled promise rejections.
+- Catched and reports uncaught exceptions.
 - Serverless, Sentry and as well as this library are all Open Source. Yay! 🎉
+- TypeScript support
 
 ## Overview
 
@@ -65,10 +63,8 @@ to its [README.md](https://github.com/arabold/serverless-sentry-lib/blob/master/
 
 ## Usage
 
-The [Serverless Sentry Plugin](https://github.com/arabold/serverless-sentry-plugin)
-allows configuration of the library through the `serverless.yml`
-and will create release and deployment information for you (if wanted).
-This is the recommended way of using the `serverless-sentry-lib` library.
+The [Serverless Sentry Plugin](https://github.com/arabold/serverless-sentry-plugin) allows configuration of the library through the `serverless.yml`
+and will create release and deployment information for you (if wanted). This is the recommended way of using the `serverless-sentry-lib` library.
 
 ### ▶️ Step 1: Load the Plugin
 
@@ -106,107 +102,51 @@ Old, now unsupported libraries:
 
 #### Node.js
 
-Import `withSentry` from the `serverless-sentry-lib` Node.js module
-and pass in your `Sentry` client as shown below - that's it.
-Passing in your own client is necessary to ensure that the wrapper uses
-the same environment as the rest of your code. In the rare circumstances that
-this isn't desired, you can pass in `null` instead.
+For maximum flexibility this library is implemented as a wrapper around your original AWS Lambda handler code (your `handler.js` or similar function). The `withSentry` higher-order function adds error and exception handling, and takes care of configuring the Sentry client automatically.
 
-**ES2015: Original Lambda Handler Code Before Adding `withSentry`**:
+`withSentry` is pre-configured to reasonable defaults and doesn't need any configuration. If will automatically load and configure `@sentry/node` which needs to be installed as a peer dependency.
+
+**Original Lambda Handler Code**:
 
 ```js
-"use strict";
-
-module.exports.hello = function (event, context, callback) {
-  callback(null, { message: "Go Serverless! Your function executed successfully!", event });
+exports.handler = async function (event, context) {
+  console.log("EVENT: \n" + JSON.stringify(event, null, 2));
+  return context.logStreamName;
 };
 ```
 
-**ES2015: New Lambda Handler Code Using `withSentry` For Sentry Reporting**
+**New Lambda Handler Code Using `withSentry` For Sentry Reporting**
 
 ```js
-"use strict";
-
-const Sentry = require("@sentry/node"); // Official `Unified Node.js SDK` module
 const withSentry = require("serverless-sentry-lib"); // This helper library
 
-module.exports.hello = withSentry(Sentry, (event, context, callback) => {
-  // Here follows your original Lambda handler code...
-  callback(null, { message: "Go Serverless! Your function executed successfully!", event });
+exports.handler = withSentry(async function (event, context) {
+  console.log("EVENT: \n" + JSON.stringify(event, null, 2));
+  return context.logStreamName;
 });
 ```
 
-**ES2017: Original Lambda Handler Code Before Adding `withSentry`**:
-
-```js
-exports.handler = async (event, context) => {
-  return { message: "Go Serverless! Your function executed successfully!", event };
-};
-```
-
-**ES2017: New Lambda Handler Code Using `withSentry` For Sentry Reporting**
-
-```js
-const Sentry = require("@sentry/node"); // Official `Unified Node.js SDK` module
-const withSentry = require("serverless-sentry-lib"); // This helper library
-
-exports.handler = withSentry(Sentry, async (event, context) => {
-  // Here follows your original Lambda handler code...
-  return { message: "Go Serverless! Your function executed successfully!", event };
-});
-```
-
-**TypeScript: Original Lambda Handler Code Before Adding `withSentry`**
+**ES6 Module: Original Lambda Handler Code**:
 
 ```ts
-import { Event } from "serverless";
-
-export async function handle(event: Event) {
-  return { message: "Go Serverless v1.0! Your function executed successfully!", event };
+export async function handler(event, context) {
+  console.log("EVENT: \n" + JSON.stringify(event, null, 2));
+  return context.logStreamName;
 }
 ```
 
-**TypeScript: New Lambda Handler Code With `withSentry` For Sentry Reporting**
+**ES6 Module: New Lambda Handler Code Using `withSentry` For Sentry Reporting**
 
 ```ts
-import * as Sentry from "@sentry/node";
-import { Event } from "serverless";
-import withSentry from "serverless-sentry-lib";
+import withSentry from "serverless-sentry-lib"; // This helper library
 
-export const handle = withSentry(Sentry, async (event: Event) => {
-  return { message: "Go Serverless v1.0! Your function executed successfully!", event };
+export const handler = withSentry(async (event, context) => {
+  console.log("EVENT: \n" + JSON.stringify(event, null, 2));
+  return context.logStreamName;
 });
 ```
 
-For more details about the different configuration options available refer to
-the [serverless-sentry-lib documentation](https://github.com/arabold/serverless-sentry-lib/blob/master/README.md).
-
-<!--
-#### Python 🐍
-
-Import `SentryLambdaWrapper` from the `raven-python-lambda` module as shown
-below:
-
-**Original Lambda Handler Code Before Adding SentryLambdaWrapper**:
-
-```python
-def handler(event, context):
-    print("Go Serverless! Your function executed successfully")
-```
-
-**New Lambda Handler Code With SentryLambdaWrapper For Sentry Reporting**
-
-```python
-from raven import Client # Offical `raven` module
-from raven_python_lambda import SentryLambdaWrapper
-
-@SentryLambdaWrapper()
-def handler(event, context):
-    print("Go Serverless! Your function executed successfully")
-```
-
-For more details about the Python integration refer to official repository
-at [Netflix-Skunkworks/raven-python-lambda](https://github.com/Netflix-Skunkworks/raven-python-lambda) -->
+Once your Lambda handler code is wrapped in `withSentry`, it will be extended it with automatic error reporting. Whenever your Lambda handler sets an error response, the error is forwarded to Sentry with additional context information. For more details about the different configuration options available refer to the [serverless-sentry-lib documentation](https://github.com/arabold/serverless-sentry-lib/blob/master/README.md).
 
 ## Plugin Configuration Options
 
@@ -227,19 +167,14 @@ you need to grant API access to this plugin by setting the following options:
 - `authToken` - API authentication token with `project:write` access
 
 👉 **Important**: You need to make sure you’re using
-[Auth Tokens](https://docs.sentry.io/api/auth/#auth-tokens) not API Keys,
-which are deprecated.
+[Auth Tokens](https://docs.sentry.io/api/auth/#auth-tokens) not API Keys, which are deprecated.
 
 ### Releases
 
-Releases are used by Sentry to provide you with additional context when
-determining the cause of an issue. The plugin can automatically create releases
-for you and tag all messages accordingly. To find out more about releases in
-Sentry, refer to the
-[official documentation](https://docs.sentry.io/learn/releases/).
+Releases are used by Sentry to provide you with additional context when determining the cause of an issue. The plugin can automatically create releases for you and tag all messages accordingly. To find out more about releases in
+Sentry, refer to the [official documentation](https://docs.sentry.io/learn/releases/).
 
-In order to enable release tagging, you need to set the `release` option in
-your `serverless.yml`:
+In order to enable release tagging, you need to set the `release` option in your `serverless.yml`:
 
 ```yaml
 custom:
@@ -256,29 +191,19 @@ custom:
           previousCommit: <COMMIT HASH>
 ```
 
-- `version` - Set the release version used in Sentry. Use any of the below
-  values:
+- `version` - Set the release version used in Sentry. Use any of the below values:
 
   - `git` - Uses the current git commit hash or tag as release identifier.
   - `random` - Generates a random release during deployment.
-  - `true` - First tries to determine the release via `git` and falls back
-    to `random` if Git is not available.
+  - `true` - First tries to determine the release via `git` and falls back to `random` if Git is not available.
   - `false` - Disable release versioning.
-  - any fixed string - Use a fixed string for the release. Serverless variables
-    are allowed.
+  - any fixed string - Use a fixed string for the release. Serverless variables are allowed.
 
-- `refs` - If you have set up Sentry to collect commit data, you can use commit
-  refs to associate your commits with your Sentry releases. Refer to the
-  [Sentry Documentation](https://docs.sentry.io/learn/releases/) for details
-  about how to use commit refs. If you set your `version` to `git` (or `true`),
-  the `refs` options are populated automatically and don't need to be set.
+- `refs` - If you have set up Sentry to collect commit data, you can use commit refs to associate your commits with your Sentry releases. Refer to the [Sentry Documentation](https://docs.sentry.io/learn/releases/) for details about how to use commit refs. If you set your `version` to `git` (or `true`), the `refs` options are populated automatically and don't need to be set.
 
-👉 **Tip:** If your repository provider is not supported by Sentry (currently
-only GitHub) you need to explicitly set `refs: false` to avoid the automatically
-population!
+👉 **Tip:** If your repository provider is not supported by Sentry (currently only GitHub) you need to explicitly set `refs: false` to avoid the automatically population!
 
-If you don't specify any refs, you can also use the short notation for `release`
-and simply set it to the desired release version as follows:
+If you don't specify any refs, you can also use the short notation for `release` and simply set it to the desired release version as follows:
 
 ```yaml
 custom:
@@ -287,14 +212,9 @@ custom:
     release: <RELEASE VERSION>
 ```
 
-If you don't need or want the plugin to create releases and deployments, you can
-omit the `authToken`, `organization` and `project` options. Messages and
-exceptions sent by your Lambda functions will still be tagged with the release
-version and show up grouped in Sentry nonetheless.
+If you don't need or want the plugin to create releases and deployments, you can omit the `authToken`, `organization` and `project` options. Messages and exceptions sent by your Lambda functions will still be tagged with the release version and show up grouped in Sentry nonetheless.
 
-👉 **Pro Tip:** The possibility to use a fixed string in combination with
-Serverless variables allows you to inject your release version through the
-command line, e.g. when running on your continuous integration machine.
+👉 **Pro Tip:** The possibility to use a fixed string in combination with Serverless variables allows you to inject your release version through the command line, e.g. when running on your continuous integration machine.
 
 ```yaml
 custom:
@@ -316,18 +236,13 @@ And then deploy your project using the command line options from above:
 sls deploy --sentryVersion 1.0.0 --sentryRepository foo/bar --sentryCommit 2da95dfb
 ```
 
-👉 **Tip when using Sentry with multiple projects:** Releases in Sentry are
-specific to the organization and can span multiple projects. Take this in
-consideration when choosing a version name. If your version applies to the
-current project only, you should prefix it with your project name.
+👉 **Tip when using Sentry with multiple projects:** Releases in Sentry are specific to the organization and can span multiple projects. Take this in consideration when choosing a version name. If your version applies to the current project only, you should prefix it with your project name.
 
 If no option for `release` is provided, releases and deployments are _disabled_.
 
 ### Enabling and Disabling Error Reporting Features
 
-In addition you can configure the Sentry error reporting on a service as well
-as a per-function level. For more details about the individual configuration
-options see the [serverless-sentry-lib documentation](https://github.com/arabold/serverless-sentry-lib/blob/master/README.md).
+In addition you can configure the Sentry error reporting on a service as well as a per-function level. For more details about the individual configuration options see the [serverless-sentry-lib documentation](https://github.com/arabold/serverless-sentry-lib/blob/master/README.md).
 
 - `autoBreadcrumbs` - Automatically create breadcrumbs (see Sentry Raven docs, defaults to `true`)
 - `filterLocal` - Don't report errors from local environments (defaults to `true`)
@@ -364,10 +279,7 @@ functions:
 
 ### No errors are reported in Sentry
 
-Double check the DSN settings in your `serverless.yml` and compare it with what
-Sentry shows you in your project settings under "Client Keys (DSN)".
-You need a URL in the following format - see the
-[Sentry Quick Start](https://docs.sentry.io/quickstart/#configure-the-dsn):
+Double check the DSN settings in your `serverless.yml` and compare it with what Sentry shows you in your project settings under "Client Keys (DSN)". You need a URL in the following format - see the [Sentry Quick Start](https://docs.sentry.io/quickstart/#configure-the-dsn):
 
 ```
 {PROTOCOL}://{PUBLIC_KEY}:{SECRET_KEY}@{HOST}/{PATH}{PROJECT_ID}
@@ -385,9 +297,7 @@ custom:
 
 ### The plugin doesn't create any releases or deployments
 
-Make sure to set the `authToken`, `organization` as well as `project` options
-in your `serverless.yml`, and set `release` to a non-empty value as shown in
-the example below:
+Make sure to set the `authToken`, `organization` as well as `project` options in your `serverless.yml`, and set `release` to a non-empty value as shown in the example below:
 
 ```yaml
 plugins:
@@ -403,20 +313,18 @@ custom:
 
 ### I'm testing my Sentry integration locally but no errors or messages are reported
 
-Check out the `filterLocal` configuration setting. If you test Sentry locally and
-want to make sure your messages are sent, set this flag to `false`. Once done
-testing, don't forget to switch it back to `true` as otherwise you'll spam your
-Sentry projects with meaningless errors of local code changes.
+Check out the `filterLocal` configuration setting. If you test Sentry locally and want to make sure your messages are sent, set this flag to `false`. Once done testing, don't forget to switch it back to `true` as otherwise you'll spam your Sentry projects with meaningless errors of local code changes.
 
 ## Version History
 
 ### 2.0.0
 
+- This version of `serverless-sentry-plugin` requires the use of `serverless-sentry-lib` v2.x.x
 - Rewrite using TypeScript. The use of TypeScript in your project is fully optional, but if you do, we got you covered!
+- Added new default uncaught exception handler.
 - Dropped support for Node.js 6 and 8. The only supported versions are Node.js 10 and 12.
-- Upgrade from sentry SDK `raven` to new _Unified Node.js SDK_ [`@sentry/node`](https://docs.sentry.io/error-reporting/configuration/?platform=node).
-- Simplified integration using `withSentry` higher order function.
-- ⚠️ remove global _sls_sentry_ for backward compatibility with oldserverless-sentry-plugin 0.2.x/0.3.x.
+- Upgrade from Sentry SDK `raven` to the _Unified Node.js SDK_ [`@sentry/node`](https://docs.sentry.io/error-reporting/configuration/?platform=node).
+- Simplified integration using `withSentry` higher order function. Passing the Sentry instance is now optional.
 - Thank you [@aheissenberger](https://github.com/aheissenberger) and [@Vadorequest](https://github.com/Vadorequest) for their contributions to this release! 🤗
 
 ### 1.2.0

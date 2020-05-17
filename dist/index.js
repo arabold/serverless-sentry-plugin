@@ -116,7 +116,7 @@ var SentryPlugin = /** @class */ (function () {
                             return [4 /*yield*/, this.setRelease()];
                         case 2:
                             _a.sent();
-                            return [4 /*yield*/, this.instrumentFunctions()];
+                            return [4 /*yield*/, this.instrumentFunctions(true)];
                         case 3:
                             _a.sent();
                             return [2 /*return*/];
@@ -196,7 +196,7 @@ var SentryPlugin = /** @class */ (function () {
             });
         });
     };
-    SentryPlugin.prototype.instrumentFunction = function (originalDefinition) {
+    SentryPlugin.prototype.instrumentFunction = function (originalDefinition, setEnv) {
         var _a;
         var newDefinition = __assign({}, originalDefinition);
         var sentryConfig = __assign({}, this.sentry);
@@ -208,42 +208,57 @@ var SentryPlugin = /** @class */ (function () {
         newDefinition.environment = (_a = newDefinition.environment) !== null && _a !== void 0 ? _a : {};
         if (typeof sentryConfig.dsn !== "undefined") {
             newDefinition.environment.SENTRY_DSN = String(sentryConfig.dsn);
+            setEnv && (process.env.SENTRY_DSN = newDefinition.environment.SENTRY_DSN);
         }
         if (typeof sentryConfig.release === "object" && sentryConfig.release.version) {
             newDefinition.environment.SENTRY_RELEASE = String(sentryConfig.release.version);
+            setEnv && (process.env.SENTRY_RELEASE = newDefinition.environment.SENTRY_RELEASE);
         }
         if (typeof sentryConfig.environment !== "undefined") {
             newDefinition.environment.SENTRY_ENVIRONMENT = String(sentryConfig.environment);
+            setEnv && (process.env.SENTRY_ENVIRONMENT = newDefinition.environment.SENTRY_ENVIRONMENT);
         }
         if (typeof sentryConfig.autoBreadcrumbs !== "undefined") {
             newDefinition.environment.SENTRY_AUTO_BREADCRUMBS = String(sentryConfig.autoBreadcrumbs);
+            setEnv && (process.env.SENTRY_AUTO_BREADCRUMBS = newDefinition.environment.SENTRY_AUTO_BREADCRUMBS);
         }
         if (typeof sentryConfig.sourceMaps !== "undefined") {
             newDefinition.environment.SENTRY_SOURCEMAPS = String(sentryConfig.sourceMaps);
+            setEnv && (process.env.SENTRY_SOURCEMAPS = newDefinition.environment.SENTRY_SOURCEMAPS);
         }
         if (typeof sentryConfig.filterLocal !== "undefined") {
             newDefinition.environment.SENTRY_FILTER_LOCAL = String(sentryConfig.filterLocal);
+            setEnv && (process.env.SENTRY_FILTER_LOCAL = newDefinition.environment.SENTRY_FILTER_LOCAL);
         }
         if (typeof sentryConfig.captureErrors !== "undefined") {
             newDefinition.environment.SENTRY_CAPTURE_ERRORS = String(sentryConfig.captureErrors);
+            setEnv && (process.env.SENTRY_CAPTURE_ERRORS = newDefinition.environment.SENTRY_CAPTURE_ERRORS);
         }
         if (typeof sentryConfig.captureUnhandledRejections !== "undefined") {
             newDefinition.environment.SENTRY_CAPTURE_UNHANDLED = String(sentryConfig.captureUnhandledRejections);
+            setEnv && (process.env.SENTRY_CAPTURE_UNHANDLED = newDefinition.environment.SENTRY_CAPTURE_UNHANDLED);
         }
         if (typeof sentryConfig.captureMemoryWarnings !== "undefined") {
             newDefinition.environment.SENTRY_CAPTURE_MEMORY = String(sentryConfig.captureMemoryWarnings);
+            setEnv && (process.env.SENTRY_CAPTURE_MEMORY = newDefinition.environment.SENTRY_CAPTURE_MEMORY);
         }
         if (typeof sentryConfig.captureTimeoutWarnings !== "undefined") {
             newDefinition.environment.SENTRY_CAPTURE_TIMEOUTS = String(sentryConfig.captureTimeoutWarnings);
+            setEnv && (process.env.SENTRY_CAPTURE_TIMEOUTS = newDefinition.environment.SENTRY_CAPTURE_TIMEOUTS);
         }
         return newDefinition;
     };
-    SentryPlugin.prototype.instrumentFunctions = function () {
+    /**
+     *
+     * @param setEnv set to `true` to set `process.env`. Useful when invoking the Lambda locally
+     */
+    SentryPlugin.prototype.instrumentFunctions = function (setEnv) {
+        if (setEnv === void 0) { setEnv = false; }
         return __awaiter(this, void 0, void 0, function () {
             var functionNames, functions;
             var _this = this;
             return __generator(this, function (_a) {
-                if (this.isInstrumented) {
+                if (this.isInstrumented && !setEnv) {
                     return [2 /*return*/]; // already instrumented in a previous step; no need to run again
                 }
                 functionNames = this.serverless.service.getAllFunctions();
@@ -252,7 +267,7 @@ var SentryPlugin = /** @class */ (function () {
                     var functionObject = _this.serverless.service.getFunction(functionName);
                     if (((_a = functionObject.sentry) !== null && _a !== void 0 ? _a : true) !== false) {
                         process.env.SLS_DEBUG && _this.serverless.cli.log("Sentry: Instrumenting " + functionObject.name);
-                        functions[functionName] = _this.instrumentFunction(functionObject);
+                        functions[functionName] = _this.instrumentFunction(functionObject, setEnv);
                     }
                     else {
                         process.env.SLS_DEBUG && _this.serverless.cli.log("Sentry: Skipping " + functionObject.name);

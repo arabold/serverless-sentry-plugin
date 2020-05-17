@@ -89,7 +89,7 @@ export class SentryPlugin implements Plugin {
       "before:invoke:local:invoke": async () => {
         await this.validate();
         await this.setRelease();
-        await this.instrumentFunctions();
+        await this.instrumentFunctions(true);
       },
 
       "before:offline:start": async () => {
@@ -149,7 +149,7 @@ export class SentryPlugin implements Plugin {
     }
   }
 
-  instrumentFunction(originalDefinition: Serverless.FunctionDefinition) {
+  instrumentFunction(originalDefinition: Serverless.FunctionDefinition, setEnv: boolean) {
     const newDefinition: FunctionDefinitionWithSentry = { ...originalDefinition };
     const sentryConfig = { ...this.sentry };
     const localConfig = newDefinition.sentry;
@@ -161,40 +161,54 @@ export class SentryPlugin implements Plugin {
     newDefinition.environment = newDefinition.environment ?? {};
     if (typeof sentryConfig.dsn !== "undefined") {
       newDefinition.environment.SENTRY_DSN = String(sentryConfig.dsn);
+      setEnv && (process.env.SENTRY_DSN = newDefinition.environment.SENTRY_DSN);
     }
     if (typeof sentryConfig.release === "object" && sentryConfig.release.version) {
       newDefinition.environment.SENTRY_RELEASE = String(sentryConfig.release.version);
+      setEnv && (process.env.SENTRY_RELEASE = newDefinition.environment.SENTRY_RELEASE);
     }
     if (typeof sentryConfig.environment !== "undefined") {
       newDefinition.environment.SENTRY_ENVIRONMENT = String(sentryConfig.environment);
+      setEnv && (process.env.SENTRY_ENVIRONMENT = newDefinition.environment.SENTRY_ENVIRONMENT);
     }
     if (typeof sentryConfig.autoBreadcrumbs !== "undefined") {
       newDefinition.environment.SENTRY_AUTO_BREADCRUMBS = String(sentryConfig.autoBreadcrumbs);
+      setEnv && (process.env.SENTRY_AUTO_BREADCRUMBS = newDefinition.environment.SENTRY_AUTO_BREADCRUMBS);
     }
     if (typeof sentryConfig.sourceMaps !== "undefined") {
       newDefinition.environment.SENTRY_SOURCEMAPS = String(sentryConfig.sourceMaps);
+      setEnv && (process.env.SENTRY_SOURCEMAPS = newDefinition.environment.SENTRY_SOURCEMAPS);
     }
     if (typeof sentryConfig.filterLocal !== "undefined") {
       newDefinition.environment.SENTRY_FILTER_LOCAL = String(sentryConfig.filterLocal);
+      setEnv && (process.env.SENTRY_FILTER_LOCAL = newDefinition.environment.SENTRY_FILTER_LOCAL);
     }
     if (typeof sentryConfig.captureErrors !== "undefined") {
       newDefinition.environment.SENTRY_CAPTURE_ERRORS = String(sentryConfig.captureErrors);
+      setEnv && (process.env.SENTRY_CAPTURE_ERRORS = newDefinition.environment.SENTRY_CAPTURE_ERRORS);
     }
     if (typeof sentryConfig.captureUnhandledRejections !== "undefined") {
       newDefinition.environment.SENTRY_CAPTURE_UNHANDLED = String(sentryConfig.captureUnhandledRejections);
+      setEnv && (process.env.SENTRY_CAPTURE_UNHANDLED = newDefinition.environment.SENTRY_CAPTURE_UNHANDLED);
     }
     if (typeof sentryConfig.captureMemoryWarnings !== "undefined") {
       newDefinition.environment.SENTRY_CAPTURE_MEMORY = String(sentryConfig.captureMemoryWarnings);
+      setEnv && (process.env.SENTRY_CAPTURE_MEMORY = newDefinition.environment.SENTRY_CAPTURE_MEMORY);
     }
     if (typeof sentryConfig.captureTimeoutWarnings !== "undefined") {
       newDefinition.environment.SENTRY_CAPTURE_TIMEOUTS = String(sentryConfig.captureTimeoutWarnings);
+      setEnv && (process.env.SENTRY_CAPTURE_TIMEOUTS = newDefinition.environment.SENTRY_CAPTURE_TIMEOUTS);
     }
 
     return newDefinition;
   }
 
-  async instrumentFunctions() {
-    if (this.isInstrumented) {
+  /**
+   *
+   * @param setEnv set to `true` to set `process.env`. Useful when invoking the Lambda locally
+   */
+  async instrumentFunctions(setEnv: boolean = false) {
+    if (this.isInstrumented && !setEnv) {
       return; // already instrumented in a previous step; no need to run again
     }
 
@@ -203,7 +217,7 @@ export class SentryPlugin implements Plugin {
       const functionObject: FunctionDefinitionWithSentry = this.serverless.service.getFunction(functionName);
       if ((functionObject.sentry ?? true) !== false) {
         process.env.SLS_DEBUG && this.serverless.cli.log(`Sentry: Instrumenting ${functionObject.name}`);
-        functions[functionName] = this.instrumentFunction(functionObject);
+        functions[functionName] = this.instrumentFunction(functionObject, setEnv);
       } else {
         process.env.SLS_DEBUG && this.serverless.cli.log(`Sentry: Skipping ${functionObject.name}`);
       }

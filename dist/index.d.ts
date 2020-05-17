@@ -54,8 +54,12 @@ export declare class SentryPlugin implements Plugin {
     constructor(serverless: Serverless, options: Serverless.Options);
     configPlugin(): void;
     validate(): Promise<void>;
-    instrumentFunction(originalDefinition: Serverless.FunctionDefinition): FunctionDefinitionWithSentry;
-    instrumentFunctions(): Promise<void>;
+    instrumentFunction(originalDefinition: Serverless.FunctionDefinition, setEnv: boolean): FunctionDefinitionWithSentry;
+    /**
+     *
+     * @param setEnv set to `true` to set `process.env`. Useful when invoking the Lambda locally
+     */
+    instrumentFunctions(setEnv?: boolean): Promise<void>;
     _resolveGitRefs(gitRev: GitRev, release: SentryRelease): Promise<SentryRelease>;
     setRelease(): Promise<void>;
     createSentryRelease(): Promise<void>;
