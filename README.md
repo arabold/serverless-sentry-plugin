@@ -374,3 +374,9 @@ Check out the `filterLocal` configuration setting. If you test Sentry locally an
 - [ ] Optionally upload external source-maps to Sentry
 - [ ] Provide CLI commands to create releases and perform other operations in Sentry
 - [ ] Ensure all exceptions and messages have been sent to Sentry before returning; see [#338](https://github.com/getsentry/raven-node/issues/338).
+
+### Support
+
+That you for supporting me and my projects.
+
+[![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=8Q53B78GGYQAJ&currency_code=USD&source=url)
