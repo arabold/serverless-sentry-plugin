@@ -48,7 +48,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var SemVer = require("semver");
-var superagent_1 = require("superagent");
+var request = require("superagent");
 var uuid_1 = require("uuid");
 var git_rev_1 = require("./git-rev");
 /**
@@ -426,7 +426,7 @@ var SentryPlugin = /** @class */ (function () {
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 3, , 4]);
-                        return [4 /*yield*/, superagent_1.default
+                        return [4 /*yield*/, request
                                 .post("https://sentry.io/api/0/organizations/" + organization + "/releases/")
                                 .set("Authorization", "Bearer " + this.sentry.authToken)
                                 .send(payload)];
@@ -460,7 +460,7 @@ var SentryPlugin = /** @class */ (function () {
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 3, , 4]);
-                        return [4 /*yield*/, superagent_1.default
+                        return [4 /*yield*/, request
                                 .post("https://sentry.io/api/0/organizations/" + organization + "/releases/" + encodeURIComponent(release.version) + "/deploys/")
                                 .set("Authorization", "Bearer " + this.sentry.authToken)
                                 .send({
