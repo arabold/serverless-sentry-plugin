@@ -317,6 +317,10 @@ Check out the `filterLocal` configuration setting. If you test Sentry locally an
 
 ## Version History
 
+### 2.0.1
+
+- Fixed error when creating new Sentry releases. Thanks to [dryror](https://github.com/dryror)!
+
 ### 2.0.0
 
 - This version of `serverless-sentry-plugin` requires the use of `serverless-sentry-lib` v2.x.x
