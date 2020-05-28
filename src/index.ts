@@ -3,7 +3,7 @@ import Serverless from "serverless";
 import Plugin from "serverless/classes/Plugin";
 import Service from "serverless/classes/Service";
 import Aws from "serverless/plugins/aws/provider/awsProvider";
-import request from "superagent";
+import * as request from "superagent";
 import { v4 as uuid } from "uuid";
 
 import GitRev from "./git-rev";
