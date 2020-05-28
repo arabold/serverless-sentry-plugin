@@ -1,6 +1,6 @@
 {
   "name": "serverless-sentry",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Serverless Sentry Plugin - Automatically send errors and exceptions to Sentry (https://sentry.io)",
   "license": "MIT",
   "repository": {
