@@ -317,6 +317,10 @@ Check out the `filterLocal` configuration setting. If you test Sentry locally an
 
 ## Version History
 
+### 2.0.2
+
+- Fixed custom release names not being set. Thanks to [botond-veress](https://github.com/botond-veress)!
+
 ### 2.0.1
 
 - Fixed error when creating new Sentry releases. Thanks to [dryror](https://github.com/dryror)!

@@ -394,7 +394,7 @@ var SentryPlugin = /** @class */ (function () {
                         else {
                             str = String(version).trim();
                             process.env.SLS_DEBUG && this.serverless.cli.log("Sentry: Setting release version to \"" + str + "\"...");
-                            release.version = this.getRandomVersion();
+                            release.version = str;
                         }
                         _c.label = 10;
                     case 10:
