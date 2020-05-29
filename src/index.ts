@@ -308,7 +308,7 @@ export class SentryPlugin implements Plugin {
     } else {
       const str = String(version).trim();
       process.env.SLS_DEBUG && this.serverless.cli.log(`Sentry: Setting release version to "${str}"...`);
-      release.version = this.getRandomVersion();
+      release.version = str;
     }
 
     this.sentry.release = release;
