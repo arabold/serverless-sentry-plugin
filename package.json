@@ -46,7 +46,6 @@
     "serverless-sentry-lib": "2.x.x"
   },
   "dependencies": {
-    "@types/serverless": "^1.67.1",
     "semver": "^7.3.2",
     "superagent": "^5.2.2",
     "uuid": "^8.0.0"
@@ -58,6 +57,7 @@
     "@types/node": "^13.13.5",
     "@types/prettier": "^2.0.0",
     "@types/semver": "^7.1.0",
+    "@types/serverless": "^1.72.0",
     "@types/superagent": "^4.1.7",
     "@types/uuid": "^7.0.3",
     "@typescript-eslint/eslint-plugin": "^2.31.0",
