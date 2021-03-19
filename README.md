@@ -201,7 +201,9 @@ custom:
 
 - `refs` - If you have set up Sentry to collect commit data, you can use commit refs to associate your commits with your Sentry releases. Refer to the [Sentry Documentation](https://docs.sentry.io/learn/releases/) for details about how to use commit refs. If you set your `version` to `git` (or `true`), the `refs` options are populated automatically and don't need to be set.
 
-👉 **Tip:** If your repository provider is not supported by Sentry (currently only GitHub) you need to explicitly set `refs: false` to avoid the automatically population!
+👉 **Tip {"refs":["Invalid repository names: xxxxx/yyyyyyy"]}:** If your repository provider is not supported by Sentry (currently only GitHub or [Gitlab with Sentry Integrations](https://docs.sentry.io/product/integrations/gitlab/)) you have the following options:
+ 1. set `refs: false`, this will not automatically population the refs but also dismisses your commit id as version
+ 2. set `refs: true` and `version: true` to populate the version with the commit short id
 
 If you don't specify any refs, you can also use the short notation for `release` and simply set it to the desired release version as follows:
 
