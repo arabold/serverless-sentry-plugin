@@ -1,0 +1,46 @@
+---
+env:
+  es6: true
+  node: true
+  mocha: true
+plugins:
+  - promise
+  - prettier
+  - "@typescript-eslint"
+extends:
+  - eslint:recommended
+  - plugin:promise/recommended
+  - plugin:@typescript-eslint/eslint-recommended
+  - plugin:@typescript-eslint/recommended
+  - plugin:@typescript-eslint/recommended-requiring-type-checking
+parser: "@typescript-eslint/parser"
+parserOptions:
+  tsconfigRootDir: .
+  project:
+    - ./tsconfig.json
+  sourceType: module
+rules:
+  "@typescript-eslint/ban-types": 0 # to allow "{}" as a type
+  "@typescript-eslint/camelcase": 0 #deprecated
+  "@typescript-eslint/explicit-function-return-type": 0 # allow implicit return types
+  "@typescript-eslint/interface-name-prefix": 0 # interfaces prefixed with "I" are perfectly fine
+  "@typescript-eslint/no-empty-function": 0
+  "@typescript-eslint/no-explicit-any": 0
+  "@typescript-eslint/no-floating-promises": error
+  "@typescript-eslint/no-inferrable-types": 0
+  "@typescript-eslint/no-unused-vars": [error, { vars: all, ignoreRestSiblings: true }]
+  "@typescript-eslint/no-useless-constructor": error
+  "@typescript-eslint/no-var-requires": 0 # allow `require()`
+  "@typescript-eslint/require-await": 0
+  import/order: 0 # we use prettier import sorting by module
+  no-console: 0
+  no-unused-expressions: 0 # use @typescript-eslint/no-unused-expressions instead
+  no-unused-vars: 0 # use @typescript-eslint/no-unused-vars instead
+  no-useless-constructor: 0 # use @typescript-eslint/no-useless-constructor instead
+  prettier/prettier: error
+overrides:
+  - files: ["*.test.*"]
+    rules:
+      "@typescript-eslint/no-floating-promises": 0
+      "@typescript-eslint/no-unused-vars": 0
+      "promise/always-return": 0
