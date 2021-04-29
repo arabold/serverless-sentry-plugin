@@ -226,6 +226,10 @@ var SentryPlugin = /** @class */ (function () {
             newDefinition.environment.SENTRY_SOURCEMAPS = String(sentryConfig.sourceMaps);
             setEnv && (process.env.SENTRY_SOURCEMAPS = newDefinition.environment.SENTRY_SOURCEMAPS);
         }
+        if (typeof sentryConfig.enabled !== "undefined") {
+            newDefinition.environment.SENTRY_ENABLED = String(sentryConfig.enabled);
+            setEnv && (process.env.SENTRY_ENABLED = newDefinition.environment.SENTRY_ENABLED);
+        }
         if (typeof sentryConfig.filterLocal !== "undefined") {
             newDefinition.environment.SENTRY_FILTER_LOCAL = String(sentryConfig.filterLocal);
             setEnv && (process.env.SENTRY_FILTER_LOCAL = newDefinition.environment.SENTRY_FILTER_LOCAL);
