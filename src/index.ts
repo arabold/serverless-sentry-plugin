@@ -27,6 +27,8 @@ export type SentryOptions = {
   project?: string;
   release?: SentryRelease | string | boolean;
 
+  /** Specifies whether this SDK should activate and send events to Sentry (defaults to `true`) */
+  enabled?: boolean;
   /** Don't report errors from local environments (defaults to `true`) */
   filterLocal?: boolean;
   /** Enable source maps (defaults to `false`) */
@@ -178,6 +180,10 @@ export class SentryPlugin implements Plugin {
     if (typeof sentryConfig.sourceMaps !== "undefined") {
       newDefinition.environment.SENTRY_SOURCEMAPS = String(sentryConfig.sourceMaps);
       setEnv && (process.env.SENTRY_SOURCEMAPS = newDefinition.environment.SENTRY_SOURCEMAPS);
+    }
+    if (typeof sentryConfig.enabled !== "undefined") {
+      newDefinition.environment.SENTRY_ENABLED = String(sentryConfig.enabled);
+      setEnv && (process.env.SENTRY_ENABLED = newDefinition.environment.SENTRY_ENABLED);
     }
     if (typeof sentryConfig.filterLocal !== "undefined") {
       newDefinition.environment.SENTRY_FILTER_LOCAL = String(sentryConfig.filterLocal);

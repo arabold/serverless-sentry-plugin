@@ -154,6 +154,7 @@ Configure the Sentry plugin using the following options in your
 `serverless.yml`:
 
 - `dsn` - Your Sentry project's DSN url (required)
+- `enabled` - Specifies whether this SDK should activate and send events to Sentry (defaults to `true`)
 - `environment` - Explicitly set the Sentry environment (defaults to the
   Serverless stage)
 
@@ -262,6 +263,7 @@ plugins:
 custom:
   sentry:
     dsn: https://xxxx:yyyy@sentry.io/zzzz # URL provided by Sentry
+    enabled: ${self:provider.stage, 'dev'} == prod # only will enable if stage is prod, if the stage is not defined will be considered as dev
     captureTimeoutWarnings: false # disable timeout warnings globally for all functions
 functions:
   FuncFoo:
