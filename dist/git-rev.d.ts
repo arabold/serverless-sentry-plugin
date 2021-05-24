@@ -9,7 +9,7 @@ export default class GitRev {
     long(): Promise<string>;
     branch(): Promise<string>;
     tag(): Promise<string>;
-    log(): Promise<string>;
+    log(): Promise<string[]>;
     exactTag(): Promise<string | undefined>;
     origin(): Promise<string>;
 }

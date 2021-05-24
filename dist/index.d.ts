@@ -18,7 +18,7 @@ export declare type SentryOptions = {
     organization?: string;
     project?: string;
     release?: SentryRelease | string | boolean;
-    /** Specifies whether this SDK should activate and send events to Sentry. (defaults to `true`) */
+    /** Specifies whether this SDK should activate and send events to Sentry (defaults to `true`) */
     enabled?: boolean;
     /** Don't report errors from local environments (defaults to `true`) */
     filterLocal?: boolean;

@@ -35,13 +35,12 @@ export default class GitRev {
     return this._command("git describe --always --tag --abbrev=0");
   }
 
-  async log(): Promise<string> {
-    return this._command('git log --no-color --pretty=format:\'[ "%H", "%s", "%cr", "%an" ],\' --abbrev-commit').then(
-      (str) => {
-        str = str.substr(0, str.length - 1);
-        return JSON.parse("[" + str + "]");
-      },
+  async log(): Promise<string[]> {
+    let str = await this._command(
+      'git log --no-color --pretty=format:\'[ "%H", "%s", "%cr", "%an" ],\' --abbrev-commit',
     );
+    str = str.substr(0, str.length - 1);
+    return JSON.parse("[" + str + "]") as string[];
   }
 
   async exactTag(): Promise<string | undefined> {

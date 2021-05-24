@@ -203,8 +203,9 @@ custom:
 - `refs` - If you have set up Sentry to collect commit data, you can use commit refs to associate your commits with your Sentry releases. Refer to the [Sentry Documentation](https://docs.sentry.io/learn/releases/) for details about how to use commit refs. If you set your `version` to `git` (or `true`), the `refs` options are populated automatically and don't need to be set.
 
 👉 **Tip {"refs":["Invalid repository names: xxxxx/yyyyyyy"]}:** If your repository provider is not supported by Sentry (currently only GitHub or [Gitlab with Sentry Integrations](https://docs.sentry.io/product/integrations/gitlab/)) you have the following options:
- 1. set `refs: false`, this will not automatically population the refs but also dismisses your commit id as version
- 2. set `refs: true` and `version: true` to populate the version with the commit short id
+
+1.  set `refs: false`, this will not automatically population the refs but also dismisses your commit id as version
+2.  set `refs: true` and `version: true` to populate the version with the commit short id
 
 If you don't specify any refs, you can also use the short notation for `release` and simply set it to the desired release version as follows:
 
@@ -257,6 +258,7 @@ In addition you can configure the Sentry error reporting on a service as well as
 ### Example Configuration
 
 ```yaml
+# serverless.yml
 service: my-serverless-project
 provider:
   # ...
@@ -265,7 +267,6 @@ plugins:
 custom:
   sentry:
     dsn: https://xxxx:yyyy@sentry.io/zzzz # URL provided by Sentry
-    enabled: ${self:provider.stage, 'dev'} == prod # only will enable if stage is prod, if the stage is not defined will be considered as dev
     captureTimeoutWarnings: false # disable timeout warnings globally for all functions
 functions:
   FuncFoo:
@@ -277,6 +278,26 @@ functions:
   FuncBar:
     handler: Bar.handler
     sentry: false # completely turn off Sentry reporting
+```
+
+### Example: Configuring Sentry based on stage
+
+In some cases it might be desired to use a different Sentry configuration depending on the currently deployed stage. To make this work we can use a built-in [Serverless variable resolutions trick](https://forum.serverless.com/t/conditional-serverless-yml-based-on-stage/1763):
+
+```yaml
+# serverless.yml
+plugins:
+  - serverless-sentry
+custom:
+  config:
+    default:
+      sentryDsn: ""
+    prod:
+      sentryDsn: "https://xxxx:yyyy@sentry.io/zzzz" # URL provided by Sentry
+
+  sentry:
+    dsn: ${self:custom.config.${self:provider.stage}.sentryDsn, self:custom.config.default.sentryDsn}
+    captureTimeoutWarnings: false # disable timeout warnings globally for all functions
 ```
 
 ## Troubleshooting
@@ -320,6 +341,12 @@ custom:
 Check out the `filterLocal` configuration setting. If you test Sentry locally and want to make sure your messages are sent, set this flag to `false`. Once done testing, don't forget to switch it back to `true` as otherwise you'll spam your Sentry projects with meaningless errors of local code changes.
 
 ## Version History
+
+### 2.1.0
+
+- Support for deploying individual functions only (`sls deploy -f MyFunction`). Thanks to [dominik-meissner](https://github.com/dominik-meissner)!
+- Improved documentations. Thanks to [aheissenberger](https://github.com/aheissenberger)
+- Updated dependencies.
 
 ### 2.0.2
 

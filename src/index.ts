@@ -88,7 +88,7 @@ export class SentryPlugin implements Plugin {
         await this.deploySentryRelease();
       },
 
-       "before:deploy:function:deploy": async () => {
+      "before:deploy:function:deploy": async () => {
         await this.validate();
         await this.setRelease();
         await this.instrumentFunctions();
@@ -98,7 +98,7 @@ export class SentryPlugin implements Plugin {
         await this.createSentryRelease();
         await this.deploySentryRelease();
       },
-      
+
       "before:invoke:local:invoke": async () => {
         await this.validate();
         await this.setRelease();
@@ -121,14 +121,14 @@ export class SentryPlugin implements Plugin {
     this.configPlugin();
   }
 
-  configPlugin() {
+  configPlugin(): void {
     this.sentry = {};
     if (typeof this.custom.sentry === "object") {
       Object.assign(this.sentry, this.custom.sentry);
     }
   }
 
-  async validate() {
+  async validate(): Promise<void> {
     if (this.validated) {
       // Already ran
       return;
@@ -141,7 +141,7 @@ export class SentryPlugin implements Plugin {
 
     // Set configuration
     this.validated = true;
-    this.sentry = { ...this.serverless.service.custom?.sentry };
+    this.sentry = { ...this.serverless.service.custom?.sentry } as Partial<SentryOptions>;
 
     // Validate Sentry options
     if (!this.sentry.dsn) {
@@ -162,7 +162,7 @@ export class SentryPlugin implements Plugin {
     }
   }
 
-  instrumentFunction(originalDefinition: Serverless.FunctionDefinition, setEnv: boolean) {
+  instrumentFunction(originalDefinition: Serverless.FunctionDefinition, setEnv: boolean): FunctionDefinitionWithSentry {
     const newDefinition: FunctionDefinitionWithSentry = { ...originalDefinition };
     const sentryConfig = { ...this.sentry };
     const localConfig = newDefinition.sentry;
@@ -192,10 +192,6 @@ export class SentryPlugin implements Plugin {
       newDefinition.environment.SENTRY_SOURCEMAPS = String(sentryConfig.sourceMaps);
       setEnv && (process.env.SENTRY_SOURCEMAPS = newDefinition.environment.SENTRY_SOURCEMAPS);
     }
-    if (typeof sentryConfig.enabled !== "undefined") {
-      newDefinition.environment.SENTRY_ENABLED = String(sentryConfig.enabled);
-      setEnv && (process.env.SENTRY_ENABLED = newDefinition.environment.SENTRY_ENABLED);
-    }
     if (typeof sentryConfig.filterLocal !== "undefined") {
       newDefinition.environment.SENTRY_FILTER_LOCAL = String(sentryConfig.filterLocal);
       setEnv && (process.env.SENTRY_FILTER_LOCAL = newDefinition.environment.SENTRY_FILTER_LOCAL);
@@ -224,7 +220,7 @@ export class SentryPlugin implements Plugin {
    *
    * @param setEnv set to `true` to set `process.env`. Useful when invoking the Lambda locally
    */
-  async instrumentFunctions(setEnv: boolean = false) {
+  async instrumentFunctions(setEnv: boolean = false): Promise<void> {
     if (this.isInstrumented && !setEnv) {
       return; // already instrumented in a previous step; no need to run again
     }
@@ -233,10 +229,10 @@ export class SentryPlugin implements Plugin {
     const functions = functionNames.reduce((functions, functionName) => {
       const functionObject: FunctionDefinitionWithSentry = this.serverless.service.getFunction(functionName);
       if ((functionObject.sentry ?? true) !== false) {
-        process.env.SLS_DEBUG && this.serverless.cli.log(`Sentry: Instrumenting ${functionObject.name}`);
+        process.env.SLS_DEBUG && this.serverless.cli.log(`Sentry: Instrumenting ${String(functionObject.name)}`);
         functions[functionName] = this.instrumentFunction(functionObject, setEnv);
       } else {
-        process.env.SLS_DEBUG && this.serverless.cli.log(`Sentry: Skipping ${functionObject.name}`);
+        process.env.SLS_DEBUG && this.serverless.cli.log(`Sentry: Skipping ${String(functionObject.name)}`);
       }
       return functions;
     }, {} as { [key: string]: FunctionDefinitionWithSentry });
@@ -272,7 +268,7 @@ export class SentryPlugin implements Plugin {
     }
   }
 
-  async setRelease() {
+  async setRelease(): Promise<void> {
     let release: SentryRelease | undefined;
     if (this.sentry.release && typeof this.sentry.release === "string") {
       // Expand to the long form
@@ -311,7 +307,7 @@ export class SentryPlugin implements Plugin {
         // No git available.
         if (version === "git") {
           // Error out
-          throw new Error(`Sentry: No Git available - ${err.toString()}`);
+          throw new Error(`Sentry: No Git available - ${(err as Error).toString()}`);
         }
         // Fall back to use a random number instead.
         process.env.SLS_DEBUG &&
@@ -331,7 +327,7 @@ export class SentryPlugin implements Plugin {
     this.sentry.release = release;
   }
 
-  async createSentryRelease() {
+  async createSentryRelease(): Promise<void> {
     if (!this.sentry.authToken || !this.sentry.release) {
       // Nothing to do
       return;
@@ -345,22 +341,30 @@ export class SentryPlugin implements Plugin {
       refs: release.refs,
       projects: [project],
     };
+    if (!organization) {
+      throw new Error("Organization not set");
+    }
+    if (!release?.version) {
+      throw new Error("Release version not set");
+    }
 
-    this.serverless.cli.log(`Sentry: Creating new release "${release.version}"...: ${JSON.stringify(payload)}`);
+    this.serverless.cli.log(`Sentry: Creating new release "${String(release.version)}"...: ${JSON.stringify(payload)}`);
     try {
       await request
         .post(`https://sentry.io/api/0/organizations/${organization}/releases/`)
         .set("Authorization", `Bearer ${this.sentry.authToken}`)
         .send(payload);
     } catch (err) {
-      if (err && err.response && err.response.text) {
-        this.serverless.cli.log(`Sentry: Received error response from Sentry:\n${err.response.text}`);
+      if ((err as request.ResponseError)?.response?.text) {
+        this.serverless.cli.log(
+          `Sentry: Received error response from Sentry:\n${String((err as request.ResponseError)?.response?.text)}`,
+        );
       }
-      throw new Error("Sentry: Error uploading release - " + err.toString());
+      throw new Error(`Sentry: Error uploading release - ${(err as Error).toString()}`);
     }
   }
 
-  async deploySentryRelease() {
+  async deploySentryRelease(): Promise<void> {
     if (!this.sentry.authToken || !this.sentry.release) {
       // Nothing to do
       return;
@@ -368,8 +372,14 @@ export class SentryPlugin implements Plugin {
 
     const organization = this.sentry.organization;
     const release = this.sentry.release as SentryRelease; // by now the type is set
-    this.serverless.cli.log(`Sentry: Deploying release "${release.version}"...`);
+    if (!organization) {
+      throw new Error("Organization not set");
+    }
+    if (!release?.version) {
+      throw new Error("Release version not set");
+    }
 
+    this.serverless.cli.log(`Sentry: Deploying release "${String(release.version)}"...`);
     try {
       await request
         .post(
@@ -383,14 +393,16 @@ export class SentryPlugin implements Plugin {
           name: `Deployed ${this.serverless.service.getServiceName()}`,
         });
     } catch (err) {
-      if (err && err.response && err.response.text) {
-        this.serverless.cli.log(`Sentry: Received error response from Sentry:\n${err.response.text}`);
+      if ((err as request.ResponseError)?.response?.text) {
+        this.serverless.cli.log(
+          `Sentry: Received error response from Sentry:\n${String((err as request.ResponseError)?.response?.text)}`,
+        );
       }
-      throw new Error("Sentry: Error deploying release - " + err.toString());
+      throw new Error(`Sentry: Error deploying release - ${(err as Error).toString()}`);
     }
   }
 
-  getRandomVersion() {
+  getRandomVersion(): string {
     return uuid().replace(/-/g, "");
   }
 }

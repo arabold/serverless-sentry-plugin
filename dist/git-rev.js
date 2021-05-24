@@ -83,11 +83,15 @@ var GitRev = /** @class */ (function () {
     };
     GitRev.prototype.log = function () {
         return __awaiter(this, void 0, void 0, function () {
+            var str;
             return __generator(this, function (_a) {
-                return [2 /*return*/, this._command('git log --no-color --pretty=format:\'[ "%H", "%s", "%cr", "%an" ],\' --abbrev-commit').then(function (str) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this._command('git log --no-color --pretty=format:\'[ "%H", "%s", "%cr", "%an" ],\' --abbrev-commit')];
+                    case 1:
+                        str = _a.sent();
                         str = str.substr(0, str.length - 1);
-                        return JSON.parse("[" + str + "]");
-                    })];
+                        return [2 /*return*/, JSON.parse("[" + str + "]")];
+                }
             });
         });
     };
