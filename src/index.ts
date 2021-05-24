@@ -88,6 +88,17 @@ export class SentryPlugin implements Plugin {
         await this.deploySentryRelease();
       },
 
+       "before:deploy:function:deploy": async () => {
+        await this.validate();
+        await this.setRelease();
+        await this.instrumentFunctions();
+      },
+
+      "after:deploy:function:deploy": async () => {
+        await this.createSentryRelease();
+        await this.deploySentryRelease();
+      },
+      
       "before:invoke:local:invoke": async () => {
         await this.validate();
         await this.setRelease();
