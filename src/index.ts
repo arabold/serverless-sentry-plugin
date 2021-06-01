@@ -37,13 +37,18 @@ export type SentryOptions = {
   autoBreadcrumbs?: boolean;
   /** Capture Lambda errors (defaults to `true`) */
   captureErrors?: boolean;
-  /** Capture unhandled exceptions (defaults to `true`) */
+  /** Capture unhandled Promise rejections (defaults to `true`) */
   captureUnhandledRejections?: boolean;
+  /** Capture uncaught exceptions (defaults to `true`) */
+  captureUncaughtException?: boolean;
   /** Monitor memory usage (defaults to `true`) */
   captureMemoryWarnings?: boolean;
   /** Monitor execution timeouts (defaults to `true`) */
   captureTimeoutWarnings?: boolean;
 };
+
+/** Short form for encoding URI components */
+const _e = encodeURIComponent;
 
 /** Helper type for Serverless functions with an optional `sentry` configuration setting */
 type FunctionDefinitionWithSentry = Serverless.FunctionDefinition & {
@@ -141,11 +146,11 @@ export class SentryPlugin implements Plugin {
 
     // Set configuration
     this.validated = true;
-    this.sentry = { ...this.serverless.service.custom?.sentry } as Partial<SentryOptions>;
+    this.sentry = { ...(this.serverless.service.custom.sentry || {}) } as Partial<SentryOptions>;
 
     // Validate Sentry options
     if (!this.sentry.dsn) {
-      throw Error("Sentry DSN must be set.");
+      this.serverless.cli.log("Sentry: DSN not set. Serverless Sentry plugin is disabled.");
     }
 
     // Set default option values
@@ -204,6 +209,10 @@ export class SentryPlugin implements Plugin {
       newDefinition.environment.SENTRY_CAPTURE_UNHANDLED = String(sentryConfig.captureUnhandledRejections);
       setEnv && (process.env.SENTRY_CAPTURE_UNHANDLED = newDefinition.environment.SENTRY_CAPTURE_UNHANDLED);
     }
+    if (typeof sentryConfig.captureUncaughtException !== "undefined") {
+      newDefinition.environment.SENTRY_CAPTURE_UNCAUGHT = String(sentryConfig.captureUncaughtException);
+      setEnv && (process.env.SENTRY_CAPTURE_UNCAUGHT = newDefinition.environment.SENTRY_CAPTURE_UNCAUGHT);
+    }
     if (typeof sentryConfig.captureMemoryWarnings !== "undefined") {
       newDefinition.environment.SENTRY_CAPTURE_MEMORY = String(sentryConfig.captureMemoryWarnings);
       setEnv && (process.env.SENTRY_CAPTURE_MEMORY = newDefinition.environment.SENTRY_CAPTURE_MEMORY);
@@ -221,6 +230,9 @@ export class SentryPlugin implements Plugin {
    * @param setEnv set to `true` to set `process.env`. Useful when invoking the Lambda locally
    */
   async instrumentFunctions(setEnv: boolean = false): Promise<void> {
+    if (!this.sentry.dsn) {
+      return; // Sentry not enabled
+    }
     if (this.isInstrumented && !setEnv) {
       return; // already instrumented in a previous step; no need to run again
     }
@@ -328,7 +340,7 @@ export class SentryPlugin implements Plugin {
   }
 
   async createSentryRelease(): Promise<void> {
-    if (!this.sentry.authToken || !this.sentry.release) {
+    if (!this.sentry.dsn || !this.sentry.authToken || !this.sentry.release) {
       // Nothing to do
       return;
     }
@@ -351,7 +363,7 @@ export class SentryPlugin implements Plugin {
     this.serverless.cli.log(`Sentry: Creating new release "${String(release.version)}"...: ${JSON.stringify(payload)}`);
     try {
       await request
-        .post(`https://sentry.io/api/0/organizations/${organization}/releases/`)
+        .post(`https://sentry.io/api/0/organizations/${_e(organization)}/releases/`)
         .set("Authorization", `Bearer ${this.sentry.authToken}`)
         .send(payload);
     } catch (err) {
@@ -365,7 +377,7 @@ export class SentryPlugin implements Plugin {
   }
 
   async deploySentryRelease(): Promise<void> {
-    if (!this.sentry.authToken || !this.sentry.release) {
+    if (!this.sentry.dsn || !this.sentry.authToken || !this.sentry.release) {
       // Nothing to do
       return;
     }
@@ -382,11 +394,7 @@ export class SentryPlugin implements Plugin {
     this.serverless.cli.log(`Sentry: Deploying release "${String(release.version)}"...`);
     try {
       await request
-        .post(
-          `https://sentry.io/api/0/organizations/${organization}/releases/${encodeURIComponent(
-            release.version,
-          )}/deploys/`,
-        )
+        .post(`https://sentry.io/api/0/organizations/${_e(organization)}/releases/${_e(release.version)}/deploys/`)
         .set("Authorization", `Bearer ${this.sentry.authToken}`)
         .send({
           environment: this.sentry.environment,

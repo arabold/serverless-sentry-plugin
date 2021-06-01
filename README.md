@@ -251,7 +251,8 @@ In addition you can configure the Sentry error reporting on a service as well as
 - `autoBreadcrumbs` - Automatically create breadcrumbs (see Sentry Raven docs, defaults to `true`)
 - `filterLocal` - Don't report errors from local environments (defaults to `true`)
 - `captureErrors` - Capture Lambda errors (defaults to `true`)
-- `captureUnhandledRejections` - Capture unhandled exceptions (defaults to `true`)
+- `captureUnhandledRejections` - Capture unhandled Promise rejections (defaults to `true`)
+- `captureUncaughtException` - Capture unhandled exceptions (defaults to `true`)
 - `captureMemoryWarnings` - Monitor memory usage (defaults to `true`)
 - `captureTimeoutWarnings` - Monitor execution timeouts (defaults to `true`)
 
@@ -341,6 +342,11 @@ custom:
 Check out the `filterLocal` configuration setting. If you test Sentry locally and want to make sure your messages are sent, set this flag to `false`. Once done testing, don't forget to switch it back to `true` as otherwise you'll spam your Sentry projects with meaningless errors of local code changes.
 
 ## Version History
+
+### 2.2.0
+
+- Added `captureUncaughtException` configuration option. This already exists in `serverless-sentry-lib` but was never exposed in the plugin.
+- Don't fail if `SENTRY_DSN` is not set but simply disable Sentry integration.
 
 ### 2.1.0
 
