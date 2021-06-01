@@ -28,8 +28,10 @@ export declare type SentryOptions = {
     autoBreadcrumbs?: boolean;
     /** Capture Lambda errors (defaults to `true`) */
     captureErrors?: boolean;
-    /** Capture unhandled exceptions (defaults to `true`) */
+    /** Capture unhandled Promise rejections (defaults to `true`) */
     captureUnhandledRejections?: boolean;
+    /** Capture uncaught exceptions (defaults to `true`) */
+    captureUncaughtException?: boolean;
     /** Monitor memory usage (defaults to `true`) */
     captureMemoryWarnings?: boolean;
     /** Monitor execution timeouts (defaults to `true`) */

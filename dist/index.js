@@ -52,6 +52,8 @@ var SemVer = require("semver");
 var request = require("superagent");
 var uuid_1 = require("uuid");
 var git_rev_1 = require("./git-rev");
+/** Short form for encoding URI components */
+var _e = encodeURIComponent;
 /**
  * Serverless Plugin forward Lambda exceptions to Sentry (https://sentry.io)
  */
@@ -195,9 +197,9 @@ var SentryPlugin = /** @class */ (function () {
         }
     };
     SentryPlugin.prototype.validate = function () {
-        var _a, _b;
+        var _a;
         return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_c) {
+            return __generator(this, function (_b) {
                 if (this.validated) {
                     // Already ran
                     return [2 /*return*/];
@@ -208,14 +210,14 @@ var SentryPlugin = /** @class */ (function () {
                 }
                 // Set configuration
                 this.validated = true;
-                this.sentry = __assign({}, (_a = this.serverless.service.custom) === null || _a === void 0 ? void 0 : _a.sentry);
+                this.sentry = __assign({}, (this.serverless.service.custom.sentry || {}));
                 // Validate Sentry options
                 if (!this.sentry.dsn) {
-                    throw Error("Sentry DSN must be set.");
+                    this.serverless.cli.log("Sentry: DSN not set. Serverless Sentry plugin is disabled.");
                 }
                 // Set default option values
                 if (!this.sentry.environment) {
-                    this.sentry.environment = (_b = this.options.stage) !== null && _b !== void 0 ? _b : undefined;
+                    this.sentry.environment = (_a = this.options.stage) !== null && _a !== void 0 ? _a : undefined;
                 }
                 if (this.sentry.authToken && (!this.sentry.organization || !this.sentry.project)) {
                     this.serverless.cli.log("Sentry: In order to use the Sentry API " +
@@ -268,6 +270,10 @@ var SentryPlugin = /** @class */ (function () {
             newDefinition.environment.SENTRY_CAPTURE_UNHANDLED = String(sentryConfig.captureUnhandledRejections);
             setEnv && (process.env.SENTRY_CAPTURE_UNHANDLED = newDefinition.environment.SENTRY_CAPTURE_UNHANDLED);
         }
+        if (typeof sentryConfig.captureUncaughtException !== "undefined") {
+            newDefinition.environment.SENTRY_CAPTURE_UNCAUGHT = String(sentryConfig.captureUncaughtException);
+            setEnv && (process.env.SENTRY_CAPTURE_UNCAUGHT = newDefinition.environment.SENTRY_CAPTURE_UNCAUGHT);
+        }
         if (typeof sentryConfig.captureMemoryWarnings !== "undefined") {
             newDefinition.environment.SENTRY_CAPTURE_MEMORY = String(sentryConfig.captureMemoryWarnings);
             setEnv && (process.env.SENTRY_CAPTURE_MEMORY = newDefinition.environment.SENTRY_CAPTURE_MEMORY);
@@ -288,6 +294,9 @@ var SentryPlugin = /** @class */ (function () {
             var functionNames, functions;
             var _this = this;
             return __generator(this, function (_a) {
+                if (!this.sentry.dsn) {
+                    return [2 /*return*/]; // Sentry not enabled
+                }
                 if (this.isInstrumented && !setEnv) {
                     return [2 /*return*/]; // already instrumented in a previous step; no need to run again
                 }
@@ -438,10 +447,10 @@ var SentryPlugin = /** @class */ (function () {
         var _a, _b, _c, _d;
         return __awaiter(this, void 0, void 0, function () {
             var organization, project, release, payload, err_2;
-            return __generator(this, function (_e) {
-                switch (_e.label) {
+            return __generator(this, function (_f) {
+                switch (_f.label) {
                     case 0:
-                        if (!this.sentry.authToken || !this.sentry.release) {
+                        if (!this.sentry.dsn || !this.sentry.authToken || !this.sentry.release) {
                             // Nothing to do
                             return [2 /*return*/];
                         }
@@ -460,18 +469,18 @@ var SentryPlugin = /** @class */ (function () {
                             throw new Error("Release version not set");
                         }
                         this.serverless.cli.log("Sentry: Creating new release \"" + String(release.version) + "\"...: " + JSON.stringify(payload));
-                        _e.label = 1;
+                        _f.label = 1;
                     case 1:
-                        _e.trys.push([1, 3, , 4]);
+                        _f.trys.push([1, 3, , 4]);
                         return [4 /*yield*/, request
-                                .post("https://sentry.io/api/0/organizations/" + organization + "/releases/")
+                                .post("https://sentry.io/api/0/organizations/" + _e(organization) + "/releases/")
                                 .set("Authorization", "Bearer " + this.sentry.authToken)
                                 .send(payload)];
                     case 2:
-                        _e.sent();
+                        _f.sent();
                         return [3 /*break*/, 4];
                     case 3:
-                        err_2 = _e.sent();
+                        err_2 = _f.sent();
                         if ((_b = (_a = err_2) === null || _a === void 0 ? void 0 : _a.response) === null || _b === void 0 ? void 0 : _b.text) {
                             this.serverless.cli.log("Sentry: Received error response from Sentry:\n" + String((_d = (_c = err_2) === null || _c === void 0 ? void 0 : _c.response) === null || _d === void 0 ? void 0 : _d.text));
                         }
@@ -485,10 +494,10 @@ var SentryPlugin = /** @class */ (function () {
         var _a, _b, _c, _d;
         return __awaiter(this, void 0, void 0, function () {
             var organization, release, err_3;
-            return __generator(this, function (_e) {
-                switch (_e.label) {
+            return __generator(this, function (_f) {
+                switch (_f.label) {
                     case 0:
-                        if (!this.sentry.authToken || !this.sentry.release) {
+                        if (!this.sentry.dsn || !this.sentry.authToken || !this.sentry.release) {
                             // Nothing to do
                             return [2 /*return*/];
                         }
@@ -501,21 +510,21 @@ var SentryPlugin = /** @class */ (function () {
                             throw new Error("Release version not set");
                         }
                         this.serverless.cli.log("Sentry: Deploying release \"" + String(release.version) + "\"...");
-                        _e.label = 1;
+                        _f.label = 1;
                     case 1:
-                        _e.trys.push([1, 3, , 4]);
+                        _f.trys.push([1, 3, , 4]);
                         return [4 /*yield*/, request
-                                .post("https://sentry.io/api/0/organizations/" + organization + "/releases/" + encodeURIComponent(release.version) + "/deploys/")
+                                .post("https://sentry.io/api/0/organizations/" + _e(organization) + "/releases/" + _e(release.version) + "/deploys/")
                                 .set("Authorization", "Bearer " + this.sentry.authToken)
                                 .send({
                                 environment: this.sentry.environment,
                                 name: "Deployed " + this.serverless.service.getServiceName(),
                             })];
                     case 2:
-                        _e.sent();
+                        _f.sent();
                         return [3 /*break*/, 4];
                     case 3:
-                        err_3 = _e.sent();
+                        err_3 = _f.sent();
                         if ((_b = (_a = err_3) === null || _a === void 0 ? void 0 : _a.response) === null || _b === void 0 ? void 0 : _b.text) {
                             this.serverless.cli.log("Sentry: Received error response from Sentry:\n" + String((_d = (_c = err_3) === null || _c === void 0 ? void 0 : _c.response) === null || _d === void 0 ? void 0 : _d.text));
                         }
