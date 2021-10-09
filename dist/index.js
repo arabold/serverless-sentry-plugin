@@ -64,6 +64,35 @@ var SentryPlugin = /** @class */ (function () {
         this.options = options;
         this.custom = this.serverless.service.custom;
         this.provider = this.serverless.getProvider("aws");
+        // Create schema for our properties. For reference use https://github.com/ajv-validator/ajv
+        serverless.configSchemaHandler.defineCustomProperties({
+            type: "object",
+            properties: {
+                sentry: {
+                    type: "object",
+                    properties: {
+                        dsn: { type: "string" },
+                        environment: { type: "string" },
+                        authToken: { type: "string" },
+                        organization: { type: "string" },
+                        project: { type: "string" },
+                        release: { type: ["object", "string", "boolean"] },
+                        enabled: { type: "boolean" },
+                        filterLocal: { type: "boolean" },
+                        sourceMaps: { type: "boolean" },
+                        autoBreadcrumbs: { type: "boolean" },
+                        captureErrors: { type: "boolean" },
+                        captureUnhandledRejections: { type: "boolean" },
+                        captureUncaughtException: { type: "boolean" },
+                        captureMemoryWarnings: { type: "boolean" },
+                        captureTimeoutWarnings: { type: "boolean" },
+                    },
+                    required: ["dsn"],
+                    additionalProperties: false,
+                },
+            },
+            required: ["sentry"],
+        });
         this.hooks = {
             "before:package:initialize": function () { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
                 return [2 /*return*/, this.validate()];
@@ -213,7 +242,7 @@ var SentryPlugin = /** @class */ (function () {
                 this.sentry = __assign({}, (this.serverless.service.custom.sentry || {}));
                 // Validate Sentry options
                 if (!this.sentry.dsn) {
-                    this.serverless.cli.log("Sentry: DSN not set. Serverless Sentry plugin is disabled.");
+                    this.serverless.cli.log("DSN not set. Serverless Sentry plugin is disabled.", "sentry");
                 }
                 // Set default option values
                 if (!this.sentry.environment) {
@@ -221,7 +250,7 @@ var SentryPlugin = /** @class */ (function () {
                 }
                 if (this.sentry.authToken && (!this.sentry.organization || !this.sentry.project)) {
                     this.serverless.cli.log("Sentry: In order to use the Sentry API " +
-                        "make sure to set `organization` and `project` in your `serverless.yml`.");
+                        "make sure to set `organization` and `project` in your `serverless.yml`.", "sentry");
                     this.sentry.authToken = undefined;
                 }
                 return [2 /*return*/];
@@ -305,11 +334,11 @@ var SentryPlugin = /** @class */ (function () {
                     var _a;
                     var functionObject = _this.serverless.service.getFunction(functionName);
                     if (((_a = functionObject.sentry) !== null && _a !== void 0 ? _a : true) !== false) {
-                        process.env.SLS_DEBUG && _this.serverless.cli.log("Sentry: Instrumenting " + String(functionObject.name));
+                        process.env.SLS_DEBUG && _this.serverless.cli.log("Instrumenting " + String(functionObject.name), "sentry");
                         functions[functionName] = _this.instrumentFunction(functionObject, setEnv);
                     }
                     else {
-                        process.env.SLS_DEBUG && _this.serverless.cli.log("Sentry: Skipping " + String(functionObject.name));
+                        process.env.SLS_DEBUG && _this.serverless.cli.log("Skipping " + String(functionObject.name), "sentry");
                     }
                     return functions;
                 }, {});
@@ -420,19 +449,19 @@ var SentryPlugin = /** @class */ (function () {
                         }
                         // Fall back to use a random number instead.
                         process.env.SLS_DEBUG &&
-                            this.serverless.cli.log("Sentry: No Git available. Creating a random release version...");
+                            this.serverless.cli.log("No Git available. Creating a random release version...", "sentry");
                         release.version = this.getRandomVersion();
                         release.refs = undefined;
                         return [3 /*break*/, 8];
                     case 8: return [3 /*break*/, 10];
                     case 9:
                         if (version === "random") {
-                            process.env.SLS_DEBUG && this.serverless.cli.log("Sentry: Creating a random release version...");
+                            process.env.SLS_DEBUG && this.serverless.cli.log("Creating a random release version...", "sentry");
                             release.version = this.getRandomVersion();
                         }
                         else {
                             str = String(version).trim();
-                            process.env.SLS_DEBUG && this.serverless.cli.log("Sentry: Setting release version to \"" + str + "\"...");
+                            process.env.SLS_DEBUG && this.serverless.cli.log("Setting release version to \"" + str + "\"...", "sentry");
                             release.version = str;
                         }
                         _c.label = 10;
@@ -468,7 +497,7 @@ var SentryPlugin = /** @class */ (function () {
                         if (!(release === null || release === void 0 ? void 0 : release.version)) {
                             throw new Error("Release version not set");
                         }
-                        this.serverless.cli.log("Sentry: Creating new release \"" + String(release.version) + "\"...: " + JSON.stringify(payload));
+                        this.serverless.cli.log("Creating new release \"" + String(release.version) + "\"...: " + JSON.stringify(payload), "sentry");
                         _f.label = 1;
                     case 1:
                         _f.trys.push([1, 3, , 4]);
@@ -482,7 +511,7 @@ var SentryPlugin = /** @class */ (function () {
                     case 3:
                         err_2 = _f.sent();
                         if ((_b = (_a = err_2) === null || _a === void 0 ? void 0 : _a.response) === null || _b === void 0 ? void 0 : _b.text) {
-                            this.serverless.cli.log("Sentry: Received error response from Sentry:\n" + String((_d = (_c = err_2) === null || _c === void 0 ? void 0 : _c.response) === null || _d === void 0 ? void 0 : _d.text));
+                            this.serverless.cli.log("Received error response from Sentry:\n" + String((_d = (_c = err_2) === null || _c === void 0 ? void 0 : _c.response) === null || _d === void 0 ? void 0 : _d.text), "sentry");
                         }
                         throw new Error("Sentry: Error uploading release - " + err_2.toString());
                     case 4: return [2 /*return*/];
@@ -509,7 +538,7 @@ var SentryPlugin = /** @class */ (function () {
                         if (!(release === null || release === void 0 ? void 0 : release.version)) {
                             throw new Error("Release version not set");
                         }
-                        this.serverless.cli.log("Sentry: Deploying release \"" + String(release.version) + "\"...");
+                        this.serverless.cli.log("Deploying release \"" + String(release.version) + "\"...", "sentry");
                         _f.label = 1;
                     case 1:
                         _f.trys.push([1, 3, , 4]);
@@ -526,7 +555,7 @@ var SentryPlugin = /** @class */ (function () {
                     case 3:
                         err_3 = _f.sent();
                         if ((_b = (_a = err_3) === null || _a === void 0 ? void 0 : _a.response) === null || _b === void 0 ? void 0 : _b.text) {
-                            this.serverless.cli.log("Sentry: Received error response from Sentry:\n" + String((_d = (_c = err_3) === null || _c === void 0 ? void 0 : _c.response) === null || _d === void 0 ? void 0 : _d.text));
+                            this.serverless.cli.log("Received error response from Sentry:\n" + String((_d = (_c = err_3) === null || _c === void 0 ? void 0 : _c.response) === null || _d === void 0 ? void 0 : _d.text), "sentry");
                         }
                         throw new Error("Sentry: Error deploying release - " + err_3.toString());
                     case 4: return [2 /*return*/];
@@ -535,7 +564,7 @@ var SentryPlugin = /** @class */ (function () {
         });
     };
     SentryPlugin.prototype.getRandomVersion = function () {
-        return uuid_1.v4().replace(/-/g, "");
+        return (0, uuid_1.v4)().replace(/-/g, "");
     };
     return SentryPlugin;
 }());

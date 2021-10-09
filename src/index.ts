@@ -20,7 +20,7 @@ export type SentryRelease = {
 };
 
 export type SentryOptions = {
-  dsn: string;
+  dsn?: string;
   environment?: string;
   authToken?: string;
   organization?: string;
@@ -73,6 +73,36 @@ export class SentryPlugin implements Plugin {
     this.options = options;
     this.custom = this.serverless.service.custom;
     this.provider = this.serverless.getProvider("aws");
+
+    // Create schema for our properties. For reference use https://github.com/ajv-validator/ajv
+    serverless.configSchemaHandler.defineCustomProperties({
+      type: "object",
+      properties: {
+        sentry: {
+          type: "object",
+          properties: {
+            dsn: { type: "string" },
+            environment: { type: "string" },
+            authToken: { type: "string" },
+            organization: { type: "string" },
+            project: { type: "string" },
+            release: { type: ["object", "string", "boolean"] }, // TODO be more specific
+            enabled: { type: "boolean" },
+            filterLocal: { type: "boolean" },
+            sourceMaps: { type: "boolean" },
+            autoBreadcrumbs: { type: "boolean" },
+            captureErrors: { type: "boolean" },
+            captureUnhandledRejections: { type: "boolean" },
+            captureUncaughtException: { type: "boolean" },
+            captureMemoryWarnings: { type: "boolean" },
+            captureTimeoutWarnings: { type: "boolean" },
+          },
+          required: ["dsn"],
+          additionalProperties: false,
+        },
+      },
+      required: ["sentry"],
+    });
 
     this.hooks = {
       "before:package:initialize": async () => this.validate(),
@@ -150,7 +180,7 @@ export class SentryPlugin implements Plugin {
 
     // Validate Sentry options
     if (!this.sentry.dsn) {
-      this.serverless.cli.log("Sentry: DSN not set. Serverless Sentry plugin is disabled.");
+      this.serverless.cli.log("DSN not set. Serverless Sentry plugin is disabled.", "sentry");
     }
 
     // Set default option values
@@ -162,6 +192,7 @@ export class SentryPlugin implements Plugin {
       this.serverless.cli.log(
         "Sentry: In order to use the Sentry API " +
           "make sure to set `organization` and `project` in your `serverless.yml`.",
+        "sentry",
       );
       this.sentry.authToken = undefined;
     }
@@ -241,10 +272,10 @@ export class SentryPlugin implements Plugin {
     const functions = functionNames.reduce((functions, functionName) => {
       const functionObject: FunctionDefinitionWithSentry = this.serverless.service.getFunction(functionName);
       if ((functionObject.sentry ?? true) !== false) {
-        process.env.SLS_DEBUG && this.serverless.cli.log(`Sentry: Instrumenting ${String(functionObject.name)}`);
+        process.env.SLS_DEBUG && this.serverless.cli.log(`Instrumenting ${String(functionObject.name)}`, "sentry");
         functions[functionName] = this.instrumentFunction(functionObject, setEnv);
       } else {
-        process.env.SLS_DEBUG && this.serverless.cli.log(`Sentry: Skipping ${String(functionObject.name)}`);
+        process.env.SLS_DEBUG && this.serverless.cli.log(`Skipping ${String(functionObject.name)}`, "sentry");
       }
       return functions;
     }, {} as { [key: string]: FunctionDefinitionWithSentry });
@@ -323,16 +354,16 @@ export class SentryPlugin implements Plugin {
         }
         // Fall back to use a random number instead.
         process.env.SLS_DEBUG &&
-          this.serverless.cli.log("Sentry: No Git available. Creating a random release version...");
+          this.serverless.cli.log("No Git available. Creating a random release version...", "sentry");
         release.version = this.getRandomVersion();
         release.refs = undefined;
       }
     } else if (version === "random") {
-      process.env.SLS_DEBUG && this.serverless.cli.log("Sentry: Creating a random release version...");
+      process.env.SLS_DEBUG && this.serverless.cli.log("Creating a random release version...", "sentry");
       release.version = this.getRandomVersion();
     } else {
       const str = String(version).trim();
-      process.env.SLS_DEBUG && this.serverless.cli.log(`Sentry: Setting release version to "${str}"...`);
+      process.env.SLS_DEBUG && this.serverless.cli.log(`Setting release version to "${str}"...`, "sentry");
       release.version = str;
     }
 
@@ -360,7 +391,10 @@ export class SentryPlugin implements Plugin {
       throw new Error("Release version not set");
     }
 
-    this.serverless.cli.log(`Sentry: Creating new release "${String(release.version)}"...: ${JSON.stringify(payload)}`);
+    this.serverless.cli.log(
+      `Creating new release "${String(release.version)}"...: ${JSON.stringify(payload)}`,
+      "sentry",
+    );
     try {
       await request
         .post(`https://sentry.io/api/0/organizations/${_e(organization)}/releases/`)
@@ -369,7 +403,8 @@ export class SentryPlugin implements Plugin {
     } catch (err) {
       if ((err as request.ResponseError)?.response?.text) {
         this.serverless.cli.log(
-          `Sentry: Received error response from Sentry:\n${String((err as request.ResponseError)?.response?.text)}`,
+          `Received error response from Sentry:\n${String((err as request.ResponseError)?.response?.text)}`,
+          "sentry",
         );
       }
       throw new Error(`Sentry: Error uploading release - ${(err as Error).toString()}`);
@@ -391,7 +426,7 @@ export class SentryPlugin implements Plugin {
       throw new Error("Release version not set");
     }
 
-    this.serverless.cli.log(`Sentry: Deploying release "${String(release.version)}"...`);
+    this.serverless.cli.log(`Deploying release "${String(release.version)}"...`, "sentry");
     try {
       await request
         .post(`https://sentry.io/api/0/organizations/${_e(organization)}/releases/${_e(release.version)}/deploys/`)
@@ -403,7 +438,8 @@ export class SentryPlugin implements Plugin {
     } catch (err) {
       if ((err as request.ResponseError)?.response?.text) {
         this.serverless.cli.log(
-          `Sentry: Received error response from Sentry:\n${String((err as request.ResponseError)?.response?.text)}`,
+          `Received error response from Sentry:\n${String((err as request.ResponseError)?.response?.text)}`,
+          "sentry",
         );
       }
       throw new Error(`Sentry: Error deploying release - ${(err as Error).toString()}`);

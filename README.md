@@ -343,6 +343,10 @@ Check out the `filterLocal` configuration setting. If you test Sentry locally an
 
 ## Version History
 
+### 2.3.0
+
+- Added configuration validation. Serverless will now warn if you pass an invalid configuration value in `custom.sentry`.
+
 ### 2.2.0
 
 - Added `captureUncaughtException` configuration option. This already exists in `serverless-sentry-lib` but was never exposed in the plugin.

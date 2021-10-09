@@ -12,7 +12,7 @@ export declare type SentryRelease = {
     }[] | false;
 };
 export declare type SentryOptions = {
-    dsn: string;
+    dsn?: string;
     environment?: string;
     authToken?: string;
     organization?: string;

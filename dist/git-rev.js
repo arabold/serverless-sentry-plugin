@@ -46,7 +46,7 @@ var GitRev = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) {
-                        child_process_1.exec(cmd, _this.opts, function (err, stdout /*, stderr */) {
+                        (0, child_process_1.exec)(cmd, _this.opts, function (err, stdout /*, stderr */) {
                             return err ? reject(err) : resolve(stdout.replace(/\n/g, "").trim());
                         });
                     })];
