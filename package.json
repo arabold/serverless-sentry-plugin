@@ -44,8 +44,8 @@
     "getsentry.com"
   ],
   "peerDependencies": {
-    "serverless": ">=2",
-    "serverless-sentry-lib": "2.x.x"
+    "serverless": "2 || 3",
+    "serverless-sentry-lib": "2"
   },
   "dependencies": {
     "semver": "^7.3.2",
@@ -74,7 +74,7 @@
     "prettier-plugin-import-sort": "^0.0.7",
     "prettier-plugin-package": "^1.0.0",
     "serverless": "^2.43.0",
-    "typescript": "^4.2.4"
+    "typescript": "4.4"
   },
   "importSort": {
     ".js, .jsx, .ts, .tsx": {

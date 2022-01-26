@@ -64,7 +64,7 @@ export declare class SentryPlugin implements Plugin {
      * @param setEnv set to `true` to set `process.env`. Useful when invoking the Lambda locally
      */
     instrumentFunctions(setEnv?: boolean): Promise<void>;
-    _resolveGitRefs(gitRev: GitRev, release: SentryRelease): Promise<SentryRelease>;
+    resolveGitRefs(gitRev: GitRev, release: SentryRelease): Promise<SentryRelease>;
     setRelease(): Promise<void>;
     createSentryRelease(): Promise<void>;
     deploySentryRelease(): Promise<void>;

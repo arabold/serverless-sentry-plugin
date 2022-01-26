@@ -89,7 +89,7 @@ var GitRev = /** @class */ (function () {
                     case 0: return [4 /*yield*/, this._command('git log --no-color --pretty=format:\'[ "%H", "%s", "%cr", "%an" ],\' --abbrev-commit')];
                     case 1:
                         str = _a.sent();
-                        str = str.substr(0, str.length - 1);
+                        str = str.substring(0, str.length - 1);
                         return [2 /*return*/, JSON.parse("[" + str + "]")];
                 }
             });
@@ -98,8 +98,7 @@ var GitRev = /** @class */ (function () {
     GitRev.prototype.exactTag = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                // Suppress errors
-                return [2 /*return*/, this._command("git describe --exact-match --tags HEAD").catch(function () { return undefined; })];
+                return [2 /*return*/, this._command("git describe --exact-match --tags HEAD").catch(null)];
             });
         });
     };

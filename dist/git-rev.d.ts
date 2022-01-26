@@ -4,7 +4,7 @@ export declare type Options = {
 export default class GitRev {
     opts: Options;
     constructor(opts?: Options);
-    _command(cmd: string): Promise<string>;
+    private _command;
     short(): Promise<string>;
     long(): Promise<string>;
     branch(): Promise<string>;

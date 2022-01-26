@@ -241,6 +241,9 @@ var SentryPlugin = /** @class */ (function () {
                 this.validated = true;
                 this.sentry = __assign({}, (this.serverless.service.custom.sentry || {}));
                 // Validate Sentry options
+                if (this.sentry.enabled === false) {
+                    this.serverless.cli.log("Serverless Sentry is disabled from provided options.", "sentry");
+                }
                 if (!this.sentry.dsn) {
                     this.serverless.cli.log("DSN not set. Serverless Sentry plugin is disabled.", "sentry");
                 }
@@ -323,7 +326,7 @@ var SentryPlugin = /** @class */ (function () {
             var functionNames, functions;
             var _this = this;
             return __generator(this, function (_a) {
-                if (!this.sentry.dsn) {
+                if (!this.sentry.dsn || this.sentry.enabled === false) {
                     return [2 /*return*/]; // Sentry not enabled
                 }
                 if (this.isInstrumented && !setEnv) {
@@ -348,7 +351,7 @@ var SentryPlugin = /** @class */ (function () {
             });
         });
     };
-    SentryPlugin.prototype._resolveGitRefs = function (gitRev, release) {
+    SentryPlugin.prototype.resolveGitRefs = function (gitRev, release) {
         var _a;
         return __awaiter(this, void 0, void 0, function () {
             var origin, commit, repository, refs;
@@ -436,7 +439,7 @@ var SentryPlugin = /** @class */ (function () {
                                 },
                             ];
                         }
-                        return [4 /*yield*/, this._resolveGitRefs(gitRev, release)];
+                        return [4 /*yield*/, this.resolveGitRefs(gitRev, release)];
                     case 6:
                         release = _c.sent();
                         return [3 /*break*/, 8];

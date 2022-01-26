@@ -179,12 +179,12 @@ export class SentryPlugin implements Plugin {
     this.sentry = { ...(this.serverless.service.custom.sentry || {}) } as Partial<SentryOptions>;
 
     // Validate Sentry options
-    if (!this.sentry.dsn) {
-      this.serverless.cli.log("DSN not set. Serverless Sentry plugin is disabled.", "sentry");
-    }
-
     if (this.sentry.enabled === false) {
       this.serverless.cli.log("Serverless Sentry is disabled from provided options.", "sentry");
+    }
+
+    if (!this.sentry.dsn) {
+      this.serverless.cli.log("DSN not set. Serverless Sentry plugin is disabled.", "sentry");
     }
 
     // Set default option values
@@ -268,6 +268,7 @@ export class SentryPlugin implements Plugin {
     if (!this.sentry.dsn || this.sentry.enabled === false) {
       return; // Sentry not enabled
     }
+
     if (this.isInstrumented && !setEnv) {
       return; // already instrumented in a previous step; no need to run again
     }
@@ -287,7 +288,7 @@ export class SentryPlugin implements Plugin {
     this.isInstrumented = true;
   }
 
-  async _resolveGitRefs(gitRev: GitRev, release: SentryRelease): Promise<SentryRelease> {
+  async resolveGitRefs(gitRev: GitRev, release: SentryRelease): Promise<SentryRelease> {
     const origin = await gitRev.origin();
     const commit = await gitRev.long();
     let repository = /[:/]([^/]+\/[^/]+?)(?:\.git)?$/i.exec(origin)?.[1];
@@ -349,7 +350,7 @@ export class SentryPlugin implements Plugin {
           ];
         }
 
-        release = await this._resolveGitRefs(gitRev, release);
+        release = await this.resolveGitRefs(gitRev, release);
       } catch (err) {
         // No git available.
         if (version === "git") {

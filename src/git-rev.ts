@@ -11,7 +11,7 @@ export default class GitRev {
     this.opts = opts ?? { cwd: __dirname };
   }
 
-  async _command(cmd: string): Promise<string> {
+  private async _command(cmd: string): Promise<string> {
     return new Promise((resolve, reject) => {
       exec(cmd, this.opts, function (err, stdout /*, stderr */) {
         return err ? reject(err) : resolve(stdout.replace(/\n/g, "").trim());
@@ -39,13 +39,12 @@ export default class GitRev {
     let str = await this._command(
       'git log --no-color --pretty=format:\'[ "%H", "%s", "%cr", "%an" ],\' --abbrev-commit',
     );
-    str = str.substr(0, str.length - 1);
+    str = str.substring(0, str.length - 1);
     return JSON.parse("[" + str + "]") as string[];
   }
 
   async exactTag(): Promise<string | undefined> {
-    // Suppress errors
-    return this._command("git describe --exact-match --tags HEAD").catch(() => undefined);
+    return this._command("git describe --exact-match --tags HEAD").catch(null);
   }
 
   async origin(): Promise<string> {
