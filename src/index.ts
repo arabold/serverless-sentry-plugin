@@ -183,6 +183,10 @@ export class SentryPlugin implements Plugin {
       this.serverless.cli.log("DSN not set. Serverless Sentry plugin is disabled.", "sentry");
     }
 
+    if (this.sentry.enabled === false) {
+      this.serverless.cli.log("Serverless Sentry is disabled from provided options.", "sentry");
+    }
+
     // Set default option values
     if (!this.sentry.environment) {
       this.sentry.environment = this.options.stage ?? undefined;
@@ -261,7 +265,7 @@ export class SentryPlugin implements Plugin {
    * @param setEnv set to `true` to set `process.env`. Useful when invoking the Lambda locally
    */
   async instrumentFunctions(setEnv: boolean = false): Promise<void> {
-    if (!this.sentry.dsn) {
+    if (!this.sentry.dsn || this.sentry.enabled === false) {
       return; // Sentry not enabled
     }
     if (this.isInstrumented && !setEnv) {
