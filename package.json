@@ -48,11 +48,13 @@
     "serverless-sentry-lib": "2.x.x"
   },
   "dependencies": {
+    "adm-zip": "^0.5.9",
     "semver": "^7.3.2",
     "superagent": "^6.1.0",
     "uuid": "^8.0.0"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.4.34",
     "@types/eslint": "^7.2.11",
     "@types/eslint-plugin-prettier": "^3.1.0",
     "@types/lodash": "^4.14.150",
