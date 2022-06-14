@@ -7,22 +7,22 @@
 
 ## About
 
-This Serverless plugin simplifies integration of [Sentry](https://sentry.io) with the popular [Serverless Framework](https://serverless.com) and AWS Lambda.
+This Serverless plugin simplifies the integration of [Sentry](https://sentry.io)](https://sentry.io) with the popular [Serverless Framework](https://serverless.com) and AWS Lambda.
 
-Currently we support [Lambda Runtimes for Node.js 10 and 12](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html) for AWS Lambda. Other platforms can be added by providing a respective integration library. Pull Requests are welcome!
+Currently, we support [Lambda Runtimes for Node.js 12, 14, and 16](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html) for AWS Lambda. Other platforms can be added by providing a respective integration library. Pull Requests are welcome!
 
 The `serverless-sentry-plugin` and `serverless-sentry-lib` libraries are not affiliated with either Functional Software Inc., Sentry, Serverless or Amazon Web Services but developed independently and in my spare time.
 
 ### Benefits
 
 - Easy to use. Promised 🤞
-- Integrates with [Serverless Framework](http://www.serverless.com) as well as the [AWS Serverless Application Model](https://aws.amazon.com/serverless/sam/) for AWS Lambda (though no use any framework is required).
+- Integrates with [Serverless Framework](http://www.serverless.com) as well as the [AWS Serverless Application Model](https://aws.amazon.com/serverless/sam/) for AWS Lambda (though no use of any framework is required).
 - Wraps your Node.js code with [Sentry](http://getsentry.com) error capturing.
 - Forwards any errors returned by your AWS Lambda function to Sentry.
 - Warn if your code is about to hit the execution timeout limit.
 - Warn if your Lambda function is low on memory.
 - Reports unhandled promise rejections.
-- Catched and reports uncaught exceptions.
+- Reports uncaught exceptions.
 - Serverless, Sentry and as well as this library are all Open Source. Yay! 🎉
 - TypeScript support
 
@@ -30,9 +30,8 @@ The `serverless-sentry-plugin` and `serverless-sentry-lib` libraries are not aff
 
 Sentry integration splits into two components:
 
-1. This plugin which simplifies installation with the Serverless Framework
-2. The [serverless-sentry-lib](https://github.com/arabold/serverless-sentry-lib)
-   which performs the runtime monitoring and error reporting.
+1. This plugin, which simplifies installation with the Serverless Framework
+2. The [serverless-sentry-lib](https://github.com/arabold/serverless-sentry-lib), which performs the runtime monitoring and error reporting.
 
 For a detailed overview of how to use the
 [serverless-sentry-lib](https://github.com/arabold/serverless-sentry-lib) refer
@@ -58,7 +57,7 @@ to its [README.md](https://github.com/arabold/serverless-sentry-lib/blob/master/
   npm install --save-dev serverless-sentry
   ```
 
-- Check out the examples below how to integrate it with your project
+- Check out the examples below on how to integrate it with your project
   by updating `serverless.yml` as well as your Lambda handler code.
 
 ## Usage
@@ -85,12 +84,9 @@ custom:
 
 ### ▶️ Step 2: Wrap Your Function Handler Code
 
-The actual reporting to Sentry happens in platform specific libraries. Currently
-only Node.js and Python are supported.
+The actual reporting to Sentry happens in platform-specific libraries. Currently, only Node.js and Python are supported.
 
-Each library provides a `withSentry` helper that act as decorators
-around your original AWS Lambda handler code and is configured via this
-plugin or manually through environment variables.
+Each library provides a `withSentry` helper that acts as decorators around your original AWS Lambda handler code and is configured via this plugin or manually through environment variables.
 
 For more details refer to the individual libraries' repositories:
 
@@ -102,9 +98,9 @@ Old, now unsupported libraries:
 
 #### Node.js
 
-For maximum flexibility this library is implemented as a wrapper around your original AWS Lambda handler code (your `handler.js` or similar function). The `withSentry` higher-order function adds error and exception handling, and takes care of configuring the Sentry client automatically.
+For maximum flexibility, this library is implemented as a wrapper around your original AWS Lambda handler code (your `handler.js` or similar function). The `withSentry` higher-order function adds error and exception handling and takes care of configuring the Sentry client automatically.
 
-`withSentry` is pre-configured to reasonable defaults and doesn't need any configuration. If will automatically load and configure `@sentry/node` which needs to be installed as a peer dependency.
+`withSentry` is pre-configured to reasonable defaults and doesn't need any configuration. It will automatically load and configure `@sentry/node` which needs to be installed as a peer dependency.
 
 **Original Lambda Handler Code**:
 
@@ -146,14 +142,14 @@ export const handler = withSentry(async (event, context) => {
 });
 ```
 
-Once your Lambda handler code is wrapped in `withSentry`, it will be extended it with automatic error reporting. Whenever your Lambda handler sets an error response, the error is forwarded to Sentry with additional context information. For more details about the different configuration options available refer to the [serverless-sentry-lib documentation](https://github.com/arabold/serverless-sentry-lib/blob/master/README.md).
+Once your Lambda handler code is wrapped in `withSentry`, it will be extended with automatic error reporting. Whenever your Lambda handler sets an error response, the error is forwarded to Sentry with additional context information. For more details about the different configuration options available refer to the [serverless-sentry-lib documentation](https://github.com/arabold/serverless-sentry-lib/blob/master/README.md).
 
 ## Plugin Configuration Options
 
 Configure the Sentry plugin using the following options in your
 `serverless.yml`:
 
-- `dsn` - Your Sentry project's DSN url (required)
+- `dsn` - Your Sentry project's DSN URL (required)
 - `enabled` - Specifies whether this SDK should activate and send events to Sentry (defaults to `true`)
 - `environment` - Explicitly set the Sentry environment (defaults to the
   Serverless stage)
@@ -234,7 +230,7 @@ custom:
           commit: ${opt:sentryCommit}
 ```
 
-And then deploy your project using the command line options from above:
+And then deploy your project using the command-line options from above:
 
 ```sh
 sls deploy --sentryVersion 1.0.0 --sentryRepository foo/bar --sentryCommit 2da95dfb
@@ -244,12 +240,10 @@ sls deploy --sentryVersion 1.0.0 --sentryRepository foo/bar --sentryCommit 2da95
 
 If no option for `release` is provided, releases and deployments are _disabled_.
 
-### Sourcemaps
+### Source Maps
 
-Sourcemap files can be uploaded to Sentry to display source files in the
-stacktraces rather than the compiled versions. This only uploads existing files
-being output, you'll need to configure your bundling tool separately. You'll
-also need to have releases configured, see above.
+Sourcemap files can be uploaded to Sentry to display source files in the stack traces rather than the compiled versions. This only uploads existing files
+being output, you'll need to configure your bundling tool separately. You'll also need to have releases configured, see above.
 
 Default options:
 
@@ -270,7 +264,7 @@ custom:
 
 ### Enabling and Disabling Error Reporting Features
 
-In addition you can configure the Sentry error reporting on a service as well as a per-function level. For more details about the individual configuration options see the [serverless-sentry-lib documentation](https://github.com/arabold/serverless-sentry-lib/blob/master/README.md).
+In addition, you can configure the Sentry error reporting on a service as well as a per-function level. For more details about the individual configuration options see the [serverless-sentry-lib documentation](https://github.com/arabold/serverless-sentry-lib/blob/master/README.md).
 
 - `autoBreadcrumbs` - Automatically create breadcrumbs (see Sentry Raven docs, defaults to `true`)
 - `filterLocal` - Don't report errors from local environments (defaults to `true`)
@@ -307,7 +301,7 @@ functions:
 
 ### Example: Configuring Sentry based on stage
 
-In some cases it might be desired to use a different Sentry configuration depending on the currently deployed stage. To make this work we can use a built-in [Serverless variable resolutions trick](https://forum.serverless.com/t/conditional-serverless-yml-based-on-stage/1763):
+In some cases, it might be desired to use a different Sentry configuration depending on the currently deployed stage. To make this work we can use a built-in [Serverless variable resolutions trick](https://forum.serverless.com/t/conditional-serverless-yml-based-on-stage/1763):
 
 ```yaml
 # serverless.yml
@@ -329,13 +323,13 @@ custom:
 
 ### No errors are reported in Sentry
 
-Double check the DSN settings in your `serverless.yml` and compare it with what Sentry shows you in your project settings under "Client Keys (DSN)". You need a URL in the following format - see the [Sentry Quick Start](https://docs.sentry.io/quickstart/#configure-the-dsn):
+Double-check the DSN settings in your `serverless.yml` and compare it with what Sentry shows you in your project settings under "Client Keys (DSN)". You need a URL in the following format - see the [Sentry Quick Start](https://docs.sentry.io/quickstart/#configure-the-dsn):
 
 ```
 {PROTOCOL}://{PUBLIC_KEY}:{SECRET_KEY}@{HOST}/{PATH}{PROJECT_ID}
 ```
 
-Also make sure to add the plugin to your plugins list in the `serverless.yml`:
+Also, make sure to add the plugin to your plugins list in the `serverless.yml`:
 
 ```yaml
 plugins:
@@ -363,7 +357,7 @@ custom:
 
 ### I'm testing my Sentry integration locally but no errors or messages are reported
 
-Check out the `filterLocal` configuration setting. If you test Sentry locally and want to make sure your messages are sent, set this flag to `false`. Once done testing, don't forget to switch it back to `true` as otherwise you'll spam your Sentry projects with meaningless errors of local code changes.
+Check out the `filterLocal` configuration setting. If you test Sentry locally and want to make sure your messages are sent, set this flag to `false`. Once done testing, don't forget to switch it back to `true` as otherwise, you'll spam your Sentry projects with meaningless errors of local code changes.
 
 ## Version History
 
@@ -376,7 +370,7 @@ Check out the `filterLocal` configuration setting. If you test Sentry locally an
 ### 2.4.0
 
 - Explicitly check for `enabled` flag. Thanks to [aaronbannin](https://github.com/aaronbannin) for the contribution.
-- Explicit peer dependency to Serverless
+- Explicit peer dependency on Serverless
 - Updated dependencies minor versions; locked TypeScript to 4.4 for now
 
 ### 2.3.0
@@ -456,7 +450,6 @@ Check out the `filterLocal` configuration setting. If you test Sentry locally an
 ### To-Dos
 
 - [ ] Bring back automatic instrumentation of the Lambda code during packaging
-- [ ] Optionally upload external source maps to Sentry
 - [ ] Provide CLI commands to create releases and perform other operations in Sentry
 - [ ] Ensure all exceptions and messages have been sent to Sentry before returning; see [#338](https://github.com/getsentry/raven-node/issues/338).
 
