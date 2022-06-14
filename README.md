@@ -252,6 +252,7 @@ being output, you'll need to configure your bundling tool separately. You'll
 also need to have releases configured, see above.
 
 Default options:
+
 ```yaml
 custom:
   sentry:
@@ -366,10 +367,17 @@ Check out the `filterLocal` configuration setting. If you test Sentry locally an
 
 ## Version History
 
-### 2.4.0
+### 2.5.0
 
 - Added support for uploading Source Maps to Sentry. Thanks to [jonmast](https://github.com/jonmast) for the contribution.
 - Fixed an issue in the configuration validation. Thanks to [DonaldoLog](https://github.com/DonaldoLog) for the fix.
+- Updated dependencies.
+
+### 2.4.0
+
+- Explicitly check for `enabled` flag. Thanks to [aaronbannin](https://github.com/aaronbannin) for the contribution.
+- Explicit peer dependency to Serverless
+- Updated dependencies minor versions; locked TypeScript to 4.4 for now
 
 ### 2.3.0
 
