@@ -1,3 +1,6 @@
+import * as path from "path";
+
+import * as AdmZip from "adm-zip";
 import * as SemVer from "semver";
 import Serverless from "serverless";
 import Plugin from "serverless/classes/Plugin";
@@ -32,7 +35,12 @@ export type SentryOptions = {
   /** Don't report errors from local environments (defaults to `true`) */
   filterLocal?: boolean;
   /** Enable source maps (defaults to `false`) */
-  sourceMaps?: boolean;
+  sourceMaps?:
+    | boolean
+    | {
+        /** Filepath prefix for sourcemaps uploaded to Sentry */
+        urlPrefix: string;
+      };
   /** Automatically create breadcrumbs (see Sentry SDK docs, default to `true`) */
   autoBreadcrumbs?: boolean;
   /** Capture Lambda errors (defaults to `true`) */
@@ -53,6 +61,15 @@ const _e = encodeURIComponent;
 /** Helper type for Serverless functions with an optional `sentry` configuration setting */
 type FunctionDefinitionWithSentry = Serverless.FunctionDefinition & {
   sentry?: boolean | SentryOptions;
+};
+
+/** Required parameters for creating/updating releases in the API */
+type ApiParameters = {
+  authToken: string;
+  organization: string;
+  project?: string;
+  refs?: SentryRelease["refs"];
+  version: string;
 };
 
 /**
@@ -91,7 +108,17 @@ export class SentryPlugin implements Plugin {
             },
             enabled: { type: "boolean" },
             filterLocal: { type: "boolean" },
-            sourceMaps: { type: "boolean" },
+            sourceMaps: {
+              oneOf: [
+                { type: "boolean" },
+                {
+                  type: "object",
+                  properties: {
+                    urlPrefix: { type: "string" },
+                  },
+                },
+              ],
+            },
             autoBreadcrumbs: { type: "boolean" },
             captureErrors: { type: "boolean" },
             captureUnhandledRejections: { type: "boolean" },
@@ -122,6 +149,7 @@ export class SentryPlugin implements Plugin {
 
       "after:deploy:deploy": async () => {
         await this.createSentryRelease();
+        await this.uploadSentrySourcemaps();
         await this.deploySentryRelease();
       },
 
@@ -133,6 +161,7 @@ export class SentryPlugin implements Plugin {
 
       "after:deploy:function:deploy": async () => {
         await this.createSentryRelease();
+        await this.uploadSentrySourcemaps();
         await this.deploySentryRelease();
       },
 
@@ -377,34 +406,24 @@ export class SentryPlugin implements Plugin {
   }
 
   async createSentryRelease(): Promise<void> {
-    if (!this.sentry.dsn || !this.sentry.authToken || !this.sentry.release) {
+    const apiParameters = this.apiParameters();
+    if (!apiParameters) {
       // Nothing to do
       return;
     }
 
-    const organization = this.sentry.organization;
-    const project = this.sentry.project;
-    const release = this.sentry.release as SentryRelease; // by now the type is set
+    const { authToken, project, refs, version, organization } = apiParameters;
     const payload = {
-      version: release.version,
-      refs: release.refs,
       projects: [project],
+      refs,
+      version,
     };
-    if (!organization) {
-      throw new Error("Organization not set");
-    }
-    if (!release?.version) {
-      throw new Error("Release version not set");
-    }
 
-    this.serverless.cli.log(
-      `Creating new release "${String(release.version)}"...: ${JSON.stringify(payload)}`,
-      "sentry",
-    );
+    this.serverless.cli.log(`Creating new release "${version}"...: ${JSON.stringify(payload)}`, "sentry");
     try {
       await request
         .post(`https://sentry.io/api/0/organizations/${_e(organization)}/releases/`)
-        .set("Authorization", `Bearer ${this.sentry.authToken}`)
+        .set("Authorization", `Bearer ${authToken}`)
         .send(payload);
     } catch (err) {
       if ((err as request.ResponseError)?.response?.text) {
@@ -417,26 +436,81 @@ export class SentryPlugin implements Plugin {
     }
   }
 
-  async deploySentryRelease(): Promise<void> {
-    if (!this.sentry.dsn || !this.sentry.authToken || !this.sentry.release) {
+  async uploadSentrySourcemaps(): Promise<void> {
+    const apiParameters = this.apiParameters();
+    if (!apiParameters) {
       // Nothing to do
       return;
     }
 
-    const organization = this.sentry.organization;
-    const release = this.sentry.release as SentryRelease; // by now the type is set
-    if (!organization) {
-      throw new Error("Organization not set");
-    }
-    if (!release?.version) {
-      throw new Error("Release version not set");
-    }
+    this.serverless.cli.log("Uploading sourcemaps to sentry", "sentry");
 
-    this.serverless.cli.log(`Deploying release "${String(release.version)}"...`, "sentry");
+    const artifacts = new Set(
+      this.serverless.service
+        .getAllFunctions()
+        .map((name) => this.serverless.service.getFunction(name).package?.artifact)
+        .filter((artifact): artifact is string => typeof artifact === "string"),
+    );
+
+    const results: Promise<void>[] = [];
+
+    artifacts.forEach((artifact) => {
+      const zip = new AdmZip(artifact);
+
+      zip.getEntries().forEach((entry) => {
+        if ((!entry.isDirectory && entry.name.endsWith(".js")) || entry.name.endsWith(".js.map")) {
+          results.push(this.uploadSourceMap(entry, apiParameters));
+        }
+      });
+    });
+
+    await Promise.all(results);
+  }
+
+  async uploadSourceMap(entry: AdmZip.IZipEntry, params: ApiParameters): Promise<void> {
+    const prefix = typeof this.sentry.sourceMaps === "object" && this.sentry.sourceMaps.urlPrefix;
+    const filePath = prefix ? path.join(prefix, entry.entryName) : entry.entryName;
+    const data = entry.getData();
+
     try {
       await request
-        .post(`https://sentry.io/api/0/organizations/${_e(organization)}/releases/${_e(release.version)}/deploys/`)
-        .set("Authorization", `Bearer ${this.sentry.authToken}`)
+        .post(`https://sentry.io/api/0/organizations/${_e(params.organization)}/releases/${_e(params.version)}/files/`)
+        .set("Authorization", `Bearer ${params.authToken}`)
+        .field("name", filePath)
+        .attach("file", data, { filename: entry.name });
+    } catch (err) {
+      const responseError = err as request.ResponseError;
+
+      if (responseError?.response?.status === 409) {
+        process.env.SLS_DEBUG && this.serverless.cli.log(`Skipping already uploaded file: ${entry.name}`, "sentry");
+        return;
+      } else if (responseError?.response?.text) {
+        this.serverless.cli.log(
+          `Received error response from Sentry:\n${String((err as request.ResponseError)?.response?.text)}`,
+          "sentry",
+        );
+      }
+
+      throw new Error(`Sentry: Error uploading sourcemap file - ${(err as Error).toString()}`);
+    }
+  }
+
+  async deploySentryRelease(): Promise<void> {
+    const apiParameters = this.apiParameters();
+    if (!apiParameters || !this.sentry.sourceMaps) {
+      // Nothing to do
+      return;
+    }
+
+    this.serverless.cli.log(`Deploying release "${String(apiParameters.version)}"...`, "sentry");
+    try {
+      await request
+        .post(
+          `https://sentry.io/api/0/organizations/${_e(apiParameters.organization)}/releases/${_e(
+            apiParameters.version,
+          )}/deploys/`,
+        )
+        .set("Authorization", `Bearer ${apiParameters.authToken}`)
         .send({
           environment: this.sentry.environment,
           name: `Deployed ${this.serverless.service.getServiceName()}`,
@@ -450,6 +524,30 @@ export class SentryPlugin implements Plugin {
       }
       throw new Error(`Sentry: Error deploying release - ${(err as Error).toString()}`);
     }
+  }
+
+  apiParameters(): ApiParameters | undefined {
+    if (!this.sentry.dsn || !this.sentry.authToken || !this.sentry.release) {
+      // Not configured for API access
+      return;
+    }
+
+    const organization = this.sentry.organization;
+    const release = this.sentry.release;
+    if (!organization) {
+      throw new Error("Organization not set");
+    }
+    if (typeof release !== "object" || typeof release?.version !== "string") {
+      throw new Error("Release version not set");
+    }
+
+    return {
+      authToken: this.sentry.authToken,
+      organization,
+      project: this.sentry.project,
+      refs: release.refs,
+      version: release.version,
+    };
   }
 
   getRandomVersion(): string {

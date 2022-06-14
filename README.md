@@ -244,6 +244,29 @@ sls deploy --sentryVersion 1.0.0 --sentryRepository foo/bar --sentryCommit 2da95
 
 If no option for `release` is provided, releases and deployments are _disabled_.
 
+### Sourcemaps
+
+Sourcemap files can be uploaded to Sentry to display source files in the
+stacktraces rather than the compiled versions. This only uploads existing files
+being output, you'll need to configure your bundling tool separately. You'll
+also need to have releases configured, see above.
+
+Default options:
+```yaml
+custom:
+  sentry:
+    sourceMaps: true
+```
+
+Add custom prefix (required if your app is not at the filesystem root)
+
+```yaml
+custom:
+  sentry:
+    sourceMaps:
+      urlPrefix: /var/task
+```
+
 ### Enabling and Disabling Error Reporting Features
 
 In addition you can configure the Sentry error reporting on a service as well as a per-function level. For more details about the individual configuration options see the [serverless-sentry-lib documentation](https://github.com/arabold/serverless-sentry-lib/blob/master/README.md).
