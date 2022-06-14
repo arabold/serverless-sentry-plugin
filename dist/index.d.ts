@@ -1,3 +1,4 @@
+import * as AdmZip from "adm-zip";
 import Serverless from "serverless";
 import Plugin from "serverless/classes/Plugin";
 import Service from "serverless/classes/Service";
@@ -23,7 +24,10 @@ export declare type SentryOptions = {
     /** Don't report errors from local environments (defaults to `true`) */
     filterLocal?: boolean;
     /** Enable source maps (defaults to `false`) */
-    sourceMaps?: boolean;
+    sourceMaps?: boolean | {
+        /** Filepath prefix for sourcemaps uploaded to Sentry */
+        urlPrefix: string;
+    };
     /** Automatically create breadcrumbs (see Sentry SDK docs, default to `true`) */
     autoBreadcrumbs?: boolean;
     /** Capture Lambda errors (defaults to `true`) */
@@ -40,6 +44,14 @@ export declare type SentryOptions = {
 /** Helper type for Serverless functions with an optional `sentry` configuration setting */
 declare type FunctionDefinitionWithSentry = Serverless.FunctionDefinition & {
     sentry?: boolean | SentryOptions;
+};
+/** Required parameters for creating/updating releases in the API */
+declare type ApiParameters = {
+    authToken: string;
+    organization: string;
+    project?: string;
+    refs?: SentryRelease["refs"];
+    version: string;
 };
 /**
  * Serverless Plugin forward Lambda exceptions to Sentry (https://sentry.io)
@@ -67,7 +79,10 @@ export declare class SentryPlugin implements Plugin {
     _resolveGitRefs(gitRev: GitRev, release: SentryRelease): Promise<SentryRelease>;
     setRelease(): Promise<void>;
     createSentryRelease(): Promise<void>;
+    uploadSentrySourcemaps(): Promise<void>;
+    uploadSourceMap(entry: AdmZip.IZipEntry, params: ApiParameters): Promise<void>;
     deploySentryRelease(): Promise<void>;
+    apiParameters(): ApiParameters | undefined;
     getRandomVersion(): string;
 }
 export {};

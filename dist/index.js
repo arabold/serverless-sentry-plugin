@@ -48,6 +48,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SentryPlugin = void 0;
+var path = require("path");
+var AdmZip = require("adm-zip");
 var SemVer = require("semver");
 var request = require("superagent");
 var uuid_1 = require("uuid");
@@ -81,7 +83,17 @@ var SentryPlugin = /** @class */ (function () {
                         },
                         enabled: { type: "boolean" },
                         filterLocal: { type: "boolean" },
-                        sourceMaps: { type: "boolean" },
+                        sourceMaps: {
+                            oneOf: [
+                                { type: "boolean" },
+                                {
+                                    type: "object",
+                                    properties: {
+                                        urlPrefix: { type: "string" },
+                                    },
+                                },
+                            ],
+                        },
                         autoBreadcrumbs: { type: "boolean" },
                         captureErrors: { type: "boolean" },
                         captureUnhandledRejections: { type: "boolean" },
@@ -134,8 +146,11 @@ var SentryPlugin = /** @class */ (function () {
                         case 0: return [4 /*yield*/, this.createSentryRelease()];
                         case 1:
                             _a.sent();
-                            return [4 /*yield*/, this.deploySentryRelease()];
+                            return [4 /*yield*/, this.uploadSentrySourcemaps()];
                         case 2:
+                            _a.sent();
+                            return [4 /*yield*/, this.deploySentryRelease()];
+                        case 3:
                             _a.sent();
                             return [2 /*return*/];
                     }
@@ -163,8 +178,11 @@ var SentryPlugin = /** @class */ (function () {
                         case 0: return [4 /*yield*/, this.createSentryRelease()];
                         case 1:
                             _a.sent();
-                            return [4 /*yield*/, this.deploySentryRelease()];
+                            return [4 /*yield*/, this.uploadSentrySourcemaps()];
                         case 2:
+                            _a.sent();
+                            return [4 /*yield*/, this.deploySentryRelease()];
+                        case 3:
                             _a.sent();
                             return [2 /*return*/];
                     }
@@ -339,11 +357,11 @@ var SentryPlugin = /** @class */ (function () {
                     var _a;
                     var functionObject = _this.serverless.service.getFunction(functionName);
                     if (((_a = functionObject.sentry) !== null && _a !== void 0 ? _a : true) !== false) {
-                        process.env.SLS_DEBUG && _this.serverless.cli.log("Instrumenting " + String(functionObject.name), "sentry");
+                        process.env.SLS_DEBUG && _this.serverless.cli.log("Instrumenting ".concat(String(functionObject.name)), "sentry");
                         functions[functionName] = _this.instrumentFunction(functionObject, setEnv);
                     }
                     else {
-                        process.env.SLS_DEBUG && _this.serverless.cli.log("Skipping " + String(functionObject.name), "sentry");
+                        process.env.SLS_DEBUG && _this.serverless.cli.log("Skipping ".concat(String(functionObject.name)), "sentry");
                     }
                     return functions;
                 }, {});
@@ -450,7 +468,7 @@ var SentryPlugin = /** @class */ (function () {
                         // No git available.
                         if (version === "git") {
                             // Error out
-                            throw new Error("Sentry: No Git available - " + err_1.toString());
+                            throw new Error("Sentry: No Git available - ".concat(err_1.toString()));
                         }
                         // Fall back to use a random number instead.
                         process.env.SLS_DEBUG &&
@@ -466,7 +484,7 @@ var SentryPlugin = /** @class */ (function () {
                         }
                         else {
                             str = String(version).trim();
-                            process.env.SLS_DEBUG && this.serverless.cli.log("Setting release version to \"" + str + "\"...", "sentry");
+                            process.env.SLS_DEBUG && this.serverless.cli.log("Setting release version to \"".concat(str, "\"..."), "sentry");
                             release.version = str;
                         }
                         _c.label = 10;
@@ -478,95 +496,173 @@ var SentryPlugin = /** @class */ (function () {
         });
     };
     SentryPlugin.prototype.createSentryRelease = function () {
-        var _a, _b, _c, _d;
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function () {
-            var organization, project, release, payload, err_2;
-            return __generator(this, function (_f) {
-                switch (_f.label) {
+            var apiParameters, authToken, project, refs, version, organization, payload, err_2;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
-                        if (!this.sentry.dsn || !this.sentry.authToken || !this.sentry.release) {
+                        apiParameters = this.apiParameters();
+                        if (!apiParameters) {
                             // Nothing to do
                             return [2 /*return*/];
                         }
-                        organization = this.sentry.organization;
-                        project = this.sentry.project;
-                        release = this.sentry.release;
+                        authToken = apiParameters.authToken, project = apiParameters.project, refs = apiParameters.refs, version = apiParameters.version, organization = apiParameters.organization;
                         payload = {
-                            version: release.version,
-                            refs: release.refs,
                             projects: [project],
+                            refs: refs,
+                            version: version,
                         };
-                        if (!organization) {
-                            throw new Error("Organization not set");
-                        }
-                        if (!(release === null || release === void 0 ? void 0 : release.version)) {
-                            throw new Error("Release version not set");
-                        }
-                        this.serverless.cli.log("Creating new release \"" + String(release.version) + "\"...: " + JSON.stringify(payload), "sentry");
-                        _f.label = 1;
+                        this.serverless.cli.log("Creating new release \"".concat(version, "\"...: ").concat(JSON.stringify(payload)), "sentry");
+                        _c.label = 1;
                     case 1:
-                        _f.trys.push([1, 3, , 4]);
+                        _c.trys.push([1, 3, , 4]);
                         return [4 /*yield*/, request
-                                .post("https://sentry.io/api/0/organizations/" + _e(organization) + "/releases/")
-                                .set("Authorization", "Bearer " + this.sentry.authToken)
+                                .post("https://sentry.io/api/0/organizations/".concat(_e(organization), "/releases/"))
+                                .set("Authorization", "Bearer ".concat(authToken))
                                 .send(payload)];
                     case 2:
-                        _f.sent();
+                        _c.sent();
                         return [3 /*break*/, 4];
                     case 3:
-                        err_2 = _f.sent();
-                        if ((_b = (_a = err_2) === null || _a === void 0 ? void 0 : _a.response) === null || _b === void 0 ? void 0 : _b.text) {
-                            this.serverless.cli.log("Received error response from Sentry:\n" + String((_d = (_c = err_2) === null || _c === void 0 ? void 0 : _c.response) === null || _d === void 0 ? void 0 : _d.text), "sentry");
+                        err_2 = _c.sent();
+                        if ((_a = err_2 === null || err_2 === void 0 ? void 0 : err_2.response) === null || _a === void 0 ? void 0 : _a.text) {
+                            this.serverless.cli.log("Received error response from Sentry:\n".concat(String((_b = err_2 === null || err_2 === void 0 ? void 0 : err_2.response) === null || _b === void 0 ? void 0 : _b.text)), "sentry");
                         }
-                        throw new Error("Sentry: Error uploading release - " + err_2.toString());
+                        throw new Error("Sentry: Error uploading release - ".concat(err_2.toString()));
+                    case 4: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    SentryPlugin.prototype.uploadSentrySourcemaps = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var apiParameters, artifacts, results;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        apiParameters = this.apiParameters();
+                        if (!apiParameters) {
+                            // Nothing to do
+                            return [2 /*return*/];
+                        }
+                        this.serverless.cli.log("Uploading sourcemaps to sentry", "sentry");
+                        artifacts = new Set(this.serverless.service
+                            .getAllFunctions()
+                            .map(function (name) { var _a; return (_a = _this.serverless.service.getFunction(name).package) === null || _a === void 0 ? void 0 : _a.artifact; })
+                            .filter(function (artifact) { return typeof artifact === "string"; }));
+                        results = [];
+                        artifacts.forEach(function (artifact) {
+                            var zip = new AdmZip(artifact);
+                            zip.getEntries().forEach(function (entry) {
+                                if ((!entry.isDirectory && entry.name.endsWith(".js")) || entry.name.endsWith(".js.map")) {
+                                    results.push(_this.uploadSourceMap(entry, apiParameters));
+                                }
+                            });
+                        });
+                        return [4 /*yield*/, Promise.all(results)];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    SentryPlugin.prototype.uploadSourceMap = function (entry, params) {
+        var _a, _b, _c;
+        return __awaiter(this, void 0, void 0, function () {
+            var prefix, filePath, data, err_3, responseError;
+            return __generator(this, function (_d) {
+                switch (_d.label) {
+                    case 0:
+                        prefix = typeof this.sentry.sourceMaps === "object" && this.sentry.sourceMaps.urlPrefix;
+                        filePath = prefix ? path.join(prefix, entry.entryName) : entry.entryName;
+                        data = entry.getData();
+                        _d.label = 1;
+                    case 1:
+                        _d.trys.push([1, 3, , 4]);
+                        return [4 /*yield*/, request
+                                .post("https://sentry.io/api/0/organizations/".concat(_e(params.organization), "/releases/").concat(_e(params.version), "/files/"))
+                                .set("Authorization", "Bearer ".concat(params.authToken))
+                                .field("name", filePath)
+                                .attach("file", data, { filename: entry.name })];
+                    case 2:
+                        _d.sent();
+                        return [3 /*break*/, 4];
+                    case 3:
+                        err_3 = _d.sent();
+                        responseError = err_3;
+                        if (((_a = responseError === null || responseError === void 0 ? void 0 : responseError.response) === null || _a === void 0 ? void 0 : _a.status) === 409) {
+                            process.env.SLS_DEBUG && this.serverless.cli.log("Skipping already uploaded file: ".concat(entry.name), "sentry");
+                            return [2 /*return*/];
+                        }
+                        else if ((_b = responseError === null || responseError === void 0 ? void 0 : responseError.response) === null || _b === void 0 ? void 0 : _b.text) {
+                            this.serverless.cli.log("Received error response from Sentry:\n".concat(String((_c = err_3 === null || err_3 === void 0 ? void 0 : err_3.response) === null || _c === void 0 ? void 0 : _c.text)), "sentry");
+                        }
+                        throw new Error("Sentry: Error uploading sourcemap file - ".concat(err_3.toString()));
                     case 4: return [2 /*return*/];
                 }
             });
         });
     };
     SentryPlugin.prototype.deploySentryRelease = function () {
-        var _a, _b, _c, _d;
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function () {
-            var organization, release, err_3;
-            return __generator(this, function (_f) {
-                switch (_f.label) {
+            var apiParameters, err_4;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
-                        if (!this.sentry.dsn || !this.sentry.authToken || !this.sentry.release) {
+                        apiParameters = this.apiParameters();
+                        if (!apiParameters || !this.sentry.sourceMaps) {
                             // Nothing to do
                             return [2 /*return*/];
                         }
-                        organization = this.sentry.organization;
-                        release = this.sentry.release;
-                        if (!organization) {
-                            throw new Error("Organization not set");
-                        }
-                        if (!(release === null || release === void 0 ? void 0 : release.version)) {
-                            throw new Error("Release version not set");
-                        }
-                        this.serverless.cli.log("Deploying release \"" + String(release.version) + "\"...", "sentry");
-                        _f.label = 1;
+                        this.serverless.cli.log("Deploying release \"".concat(String(apiParameters.version), "\"..."), "sentry");
+                        _c.label = 1;
                     case 1:
-                        _f.trys.push([1, 3, , 4]);
+                        _c.trys.push([1, 3, , 4]);
                         return [4 /*yield*/, request
-                                .post("https://sentry.io/api/0/organizations/" + _e(organization) + "/releases/" + _e(release.version) + "/deploys/")
-                                .set("Authorization", "Bearer " + this.sentry.authToken)
+                                .post("https://sentry.io/api/0/organizations/".concat(_e(apiParameters.organization), "/releases/").concat(_e(apiParameters.version), "/deploys/"))
+                                .set("Authorization", "Bearer ".concat(apiParameters.authToken))
                                 .send({
                                 environment: this.sentry.environment,
-                                name: "Deployed " + this.serverless.service.getServiceName(),
+                                name: "Deployed ".concat(this.serverless.service.getServiceName()),
                             })];
                     case 2:
-                        _f.sent();
+                        _c.sent();
                         return [3 /*break*/, 4];
                     case 3:
-                        err_3 = _f.sent();
-                        if ((_b = (_a = err_3) === null || _a === void 0 ? void 0 : _a.response) === null || _b === void 0 ? void 0 : _b.text) {
-                            this.serverless.cli.log("Received error response from Sentry:\n" + String((_d = (_c = err_3) === null || _c === void 0 ? void 0 : _c.response) === null || _d === void 0 ? void 0 : _d.text), "sentry");
+                        err_4 = _c.sent();
+                        if ((_a = err_4 === null || err_4 === void 0 ? void 0 : err_4.response) === null || _a === void 0 ? void 0 : _a.text) {
+                            this.serverless.cli.log("Received error response from Sentry:\n".concat(String((_b = err_4 === null || err_4 === void 0 ? void 0 : err_4.response) === null || _b === void 0 ? void 0 : _b.text)), "sentry");
                         }
-                        throw new Error("Sentry: Error deploying release - " + err_3.toString());
+                        throw new Error("Sentry: Error deploying release - ".concat(err_4.toString()));
                     case 4: return [2 /*return*/];
                 }
             });
         });
+    };
+    SentryPlugin.prototype.apiParameters = function () {
+        if (!this.sentry.dsn || !this.sentry.authToken || !this.sentry.release) {
+            // Not configured for API access
+            return;
+        }
+        var organization = this.sentry.organization;
+        var release = this.sentry.release;
+        if (!organization) {
+            throw new Error("Organization not set");
+        }
+        if (typeof release !== "object" || typeof (release === null || release === void 0 ? void 0 : release.version) !== "string") {
+            throw new Error("Release version not set");
+        }
+        return {
+            authToken: this.sentry.authToken,
+            organization: organization,
+            project: this.sentry.project,
+            refs: release.refs,
+            version: release.version,
+        };
     };
     SentryPlugin.prototype.getRandomVersion = function () {
         return (0, uuid_1.v4)().replace(/-/g, "");
