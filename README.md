@@ -366,6 +366,11 @@ Check out the `filterLocal` configuration setting. If you test Sentry locally an
 
 ## Version History
 
+### 2.4.0
+
+- Added support for uploading Source Maps to Sentry. Thanks to [jonmast](https://github.com/jonmast) for the contribution.
+- Fixed an issue in the configuration validation. Thanks to [DonaldoLog](https://github.com/DonaldoLog) for the fix.
+
 ### 2.3.0
 
 - Added configuration validation. Serverless will now warn if you pass an invalid configuration value in `custom.sentry`.
@@ -378,7 +383,7 @@ Check out the `filterLocal` configuration setting. If you test Sentry locally an
 ### 2.1.0
 
 - Support for deploying individual functions only (`sls deploy -f MyFunction`). Thanks to [dominik-meissner](https://github.com/dominik-meissner)!
-- Improved documentations. Thanks to [aheissenberger](https://github.com/aheissenberger)
+- Improved documentation. Thanks to [aheissenberger](https://github.com/aheissenberger)
 - Updated dependencies.
 
 ### 2.0.2
@@ -396,7 +401,7 @@ Check out the `filterLocal` configuration setting. If you test Sentry locally an
 - Added new default uncaught exception handler.
 - Dropped support for Node.js 6 and 8. The only supported versions are Node.js 10 and 12.
 - Upgrade from Sentry SDK `raven` to the _Unified Node.js SDK_ [`@sentry/node`](https://docs.sentry.io/error-reporting/configuration/?platform=node).
-- Simplified integration using `withSentry` higher order function. Passing the Sentry instance is now optional.
+- Simplified integration using `withSentry` higher-order function. Passing the Sentry instance is now optional.
 - Thank you [@aheissenberger](https://github.com/aheissenberger) and [@Vadorequest](https://github.com/Vadorequest) for their contributions to this release! 🤗
 
 ### 1.2.0
@@ -415,8 +420,8 @@ Check out the `filterLocal` configuration setting. If you test Sentry locally an
 
 ### 1.0.0
 
-- Version falls back to git hash if no tag is set for current head (#15).
-- Fixed reporting bugs in local environment despite config telling otherwise (#17).
+- Version falls back to git hash if no tag is set for the current head (#15).
+- Fixed reporting bugs in the local environment despite config telling otherwise (#17).
   This requires an update of `serverless-sentry-lib` as well!
 
 ### 1.0.0-rc.4
@@ -443,7 +448,7 @@ Check out the `filterLocal` configuration setting. If you test Sentry locally an
 ### To-Dos
 
 - [ ] Bring back automatic instrumentation of the Lambda code during packaging
-- [ ] Optionally upload external source-maps to Sentry
+- [ ] Optionally upload external source maps to Sentry
 - [ ] Provide CLI commands to create releases and perform other operations in Sentry
 - [ ] Ensure all exceptions and messages have been sent to Sentry before returning; see [#338](https://github.com/getsentry/raven-node/issues/338).
 
