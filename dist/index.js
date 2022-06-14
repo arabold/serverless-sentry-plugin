@@ -76,7 +76,9 @@ var SentryPlugin = /** @class */ (function () {
                         authToken: { type: "string" },
                         organization: { type: "string" },
                         project: { type: "string" },
-                        release: { type: ["object", "string", "boolean"] },
+                        release: {
+                            anyOf: [{ type: "object" }, { type: "string" }, { type: "boolean" }],
+                        },
                         enabled: { type: "boolean" },
                         filterLocal: { type: "boolean" },
                         sourceMaps: { type: "boolean" },
@@ -244,6 +246,9 @@ var SentryPlugin = /** @class */ (function () {
                 if (!this.sentry.dsn) {
                     this.serverless.cli.log("DSN not set. Serverless Sentry plugin is disabled.", "sentry");
                 }
+                if (this.sentry.enabled === false) {
+                    this.serverless.cli.log("Serverless Sentry is disabled from provided options.", "sentry");
+                }
                 // Set default option values
                 if (!this.sentry.environment) {
                     this.sentry.environment = (_a = this.options.stage) !== null && _a !== void 0 ? _a : undefined;
@@ -323,7 +328,7 @@ var SentryPlugin = /** @class */ (function () {
             var functionNames, functions;
             var _this = this;
             return __generator(this, function (_a) {
-                if (!this.sentry.dsn) {
+                if (!this.sentry.dsn || this.sentry.enabled === false) {
                     return [2 /*return*/]; // Sentry not enabled
                 }
                 if (this.isInstrumented && !setEnv) {

@@ -86,7 +86,9 @@ export class SentryPlugin implements Plugin {
             authToken: { type: "string" },
             organization: { type: "string" },
             project: { type: "string" },
-            release: { type: ["object", "string", "boolean"] }, // TODO be more specific
+            release: {
+              anyOf: [{ type: "object" }, { type: "string" }, { type: "boolean" }],
+            },
             enabled: { type: "boolean" },
             filterLocal: { type: "boolean" },
             sourceMaps: { type: "boolean" },
