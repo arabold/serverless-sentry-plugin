@@ -1,9 +1,11 @@
 # ⚡️ Serverless Sentry Plugin
 
-[![serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)
+[![serverless](https://img.shields.io/npm/dependency-version/serverless-sentry/peer/serverless.svg?style=flat-square)](https://www.serverless.com)
+[![nodejs](https://img.shields.io/node/v/serverless-sentry.svg?style=flat-square)](https://nodejs.org/)
 [![npm](https://img.shields.io/npm/v/serverless-sentry.svg)](https://www.npmjs.com/package/serverless-sentry)
 [![license](https://img.shields.io/github/license/arabold/serverless-sentry-plugin.svg)](https://github.com/arabold/serverless-sentry-plugin/blob/master/LICENSE)
-[![dependencies](https://img.shields.io/david/arabold/serverless-sentry-plugin.svg)](https://www.npmjs.com/package/serverless-sentry)
+[![dependencies](https://img.shields.io/librariesio/github/arabold/serverless-sentry-plugin.svg)](https://www.npmjs.com/package/serverless-sentry-plugin)
+[![prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://prettier.io/)
 
 ## About
 
