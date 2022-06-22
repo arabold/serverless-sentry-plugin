@@ -49,6 +49,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SentryPlugin = void 0;
 var path = require("path");
+var promise_pool_1 = require("@supercharge/promise-pool");
 var AdmZip = require("adm-zip");
 var SemVer = require("semver");
 var request = require("superagent");
@@ -547,7 +548,7 @@ var SentryPlugin = /** @class */ (function () {
                             // Nothing to do
                             return [2 /*return*/];
                         }
-                        this.serverless.cli.log("Uploading sourcemaps to sentry", "sentry");
+                        this.serverless.cli.log("Uploading source maps to Sentry", "sentry");
                         artifacts = new Set(this.serverless.service
                             .getAllFunctions()
                             .map(function (name) { var _a; return (_a = _this.serverless.service.getFunction(name).package) === null || _a === void 0 ? void 0 : _a.artifact; })
@@ -561,10 +562,17 @@ var SentryPlugin = /** @class */ (function () {
                                 }
                             });
                         });
-                        // Upload artifacts one after the other
-                        return [4 /*yield*/, results.reduce(function (previousPromise, nextArtifact) { return previousPromise.then(function () { return nextArtifact(); }); }, Promise.resolve())];
+                        // Upload artifacts
+                        return [4 /*yield*/, promise_pool_1.PromisePool.withConcurrency(5)
+                                .for(results)
+                                .process(function (nextArtifact) { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0: return [4 /*yield*/, nextArtifact()];
+                                    case 1: return [2 /*return*/, _a.sent()];
+                                }
+                            }); }); })];
                     case 1:
-                        // Upload artifacts one after the other
+                        // Upload artifacts
                         _a.sent();
                         return [2 /*return*/];
                 }
