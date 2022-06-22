@@ -363,6 +363,11 @@ Check out the `filterLocal` configuration setting. If you test Sentry locally an
 
 ## Version History
 
+### 2.5.1
+
+- Fix [#63](https://github.com/arabold/serverless-sentry-lib/issues/63): Upload source maps serially to avoid running out of sockets.
+- Correctly disable uploading source maps if the config setting is `false` or unset.
+
 ### 2.5.0
 
 - Added support for uploading Source Maps to Sentry. Thanks to [jonmast](https://github.com/jonmast) for the contribution.
