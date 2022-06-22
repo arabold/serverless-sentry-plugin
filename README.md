@@ -363,9 +363,13 @@ Check out the `filterLocal` configuration setting. If you test Sentry locally an
 
 ## Version History
 
+### 2.5.3
+
+- Increased number of parallel uploads of source map artifacts for better performance.
+
 ### 2.5.2
 
-- Upload multiple source maps artifacts in parallel for better performance.
+- Upload multiple source map artifacts in parallel for better performance.
 
 ### 2.5.1
 

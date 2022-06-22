@@ -562,8 +562,9 @@ var SentryPlugin = /** @class */ (function () {
                                 }
                             });
                         });
-                        // Upload artifacts
-                        return [4 /*yield*/, promise_pool_1.PromisePool.withConcurrency(5)
+                        // Upload artifacts in parallel. 50 parallel web sockets is the default of the AWS JavaScript SDK.
+                        // see https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/node-configuring-maxsockets.html
+                        return [4 /*yield*/, promise_pool_1.PromisePool.withConcurrency(50)
                                 .for(results)
                                 .process(function (nextArtifact) { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
                                 switch (_a.label) {
@@ -572,7 +573,8 @@ var SentryPlugin = /** @class */ (function () {
                                 }
                             }); }); })];
                     case 1:
-                        // Upload artifacts
+                        // Upload artifacts in parallel. 50 parallel web sockets is the default of the AWS JavaScript SDK.
+                        // see https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/node-configuring-maxsockets.html
                         _a.sent();
                         return [2 /*return*/];
                 }

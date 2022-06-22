@@ -465,8 +465,9 @@ export class SentryPlugin implements Plugin {
       });
     });
 
-    // Upload artifacts
-    await PromisePool.withConcurrency(5)
+    // Upload artifacts in parallel. 50 parallel web sockets is the default of the AWS JavaScript SDK.
+    // see https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/node-configuring-maxsockets.html
+    await PromisePool.withConcurrency(50)
       .for(results)
       .process(async (nextArtifact) => await nextArtifact());
   }
