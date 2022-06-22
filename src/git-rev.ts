@@ -44,7 +44,7 @@ export default class GitRev {
   }
 
   async exactTag(): Promise<string | undefined> {
-    // Suppress errors
+    // Suppress errors as this will fail if no tag exists yet
     return this._command("git describe --exact-match --tags HEAD").catch(() => undefined);
   }
 
