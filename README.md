@@ -363,6 +363,10 @@ Check out the `filterLocal` configuration setting. If you test Sentry locally an
 
 ## Version History
 
+### 2.5.2
+
+- Upload multiple source maps artifacts in parallel for better performance.
+
 ### 2.5.1
 
 - Fix [#63](https://github.com/arabold/serverless-sentry-lib/issues/63): Upload source maps serially to avoid running out of sockets.
@@ -372,6 +376,7 @@ Check out the `filterLocal` configuration setting. If you test Sentry locally an
 
 - Added support for uploading Source Maps to Sentry. Thanks to [jonmast](https://github.com/jonmast) for the contribution.
 - Fixed an issue in the configuration validation. Thanks to [DonaldoLog](https://github.com/DonaldoLog) for the fix.
+- Fixed an issue if using
 - Updated dependencies.
 
 ### 2.4.0
