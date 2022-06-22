@@ -49,6 +49,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SentryPlugin = void 0;
 var path = require("path");
+var promise_pool_1 = require("@supercharge/promise-pool");
 var AdmZip = require("adm-zip");
 var SemVer = require("semver");
 var request = require("superagent");
@@ -60,12 +61,13 @@ var _e = encodeURIComponent;
  * Serverless Plugin forward Lambda exceptions to Sentry (https://sentry.io)
  */
 var SentryPlugin = /** @class */ (function () {
-    function SentryPlugin(serverless, options) {
+    function SentryPlugin(serverless, options, logging) {
         var _this = this;
         this.serverless = serverless;
         this.options = options;
         this.custom = this.serverless.service.custom;
         this.provider = this.serverless.getProvider("aws");
+        this.logging = logging;
         // Create schema for our properties. For reference use https://github.com/ajv-validator/ajv
         serverless.configSchemaHandler.defineCustomProperties({
             type: "object",
@@ -262,18 +264,18 @@ var SentryPlugin = /** @class */ (function () {
                 this.sentry = __assign({}, (this.serverless.service.custom.sentry || {}));
                 // Validate Sentry options
                 if (!this.sentry.dsn) {
-                    this.serverless.cli.log("DSN not set. Serverless Sentry plugin is disabled.", "sentry");
+                    this.logging.log.notice("DSN not set. Serverless Sentry plugin is disabled.");
                 }
                 if (this.sentry.enabled === false) {
-                    this.serverless.cli.log("Serverless Sentry is disabled from provided options.", "sentry");
+                    this.logging.log.notice("Serverless Sentry is disabled from provided options.");
                 }
                 // Set default option values
                 if (!this.sentry.environment) {
                     this.sentry.environment = (_a = this.options.stage) !== null && _a !== void 0 ? _a : undefined;
                 }
                 if (this.sentry.authToken && (!this.sentry.organization || !this.sentry.project)) {
-                    this.serverless.cli.log("Sentry: In order to use the Sentry API " +
-                        "make sure to set `organization` and `project` in your `serverless.yml`.", "sentry");
+                    this.logging.log.warning("Sentry: In order to use the Sentry API " +
+                        "make sure to set `organization` and `project` in your `serverless.yml`.");
                     this.sentry.authToken = undefined;
                 }
                 return [2 /*return*/];
@@ -357,11 +359,11 @@ var SentryPlugin = /** @class */ (function () {
                     var _a;
                     var functionObject = _this.serverless.service.getFunction(functionName);
                     if (((_a = functionObject.sentry) !== null && _a !== void 0 ? _a : true) !== false) {
-                        process.env.SLS_DEBUG && _this.serverless.cli.log("Instrumenting ".concat(String(functionObject.name)), "sentry");
+                        _this.logging.log.verbose("Instrumenting ".concat(String(functionObject.name)));
                         functions[functionName] = _this.instrumentFunction(functionObject, setEnv);
                     }
                     else {
-                        process.env.SLS_DEBUG && _this.serverless.cli.log("Skipping ".concat(String(functionObject.name)), "sentry");
+                        _this.logging.log.verbose("Skipping ".concat(String(functionObject.name)));
                     }
                     return functions;
                 }, {});
@@ -471,20 +473,19 @@ var SentryPlugin = /** @class */ (function () {
                             throw new Error("Sentry: No Git available - ".concat(err_1.toString()));
                         }
                         // Fall back to use a random number instead.
-                        process.env.SLS_DEBUG &&
-                            this.serverless.cli.log("No Git available. Creating a random release version...", "sentry");
-                        release.version = this.getRandomVersion();
+                        this.logging.log.verbose("No Git available. Creating a random release version...");
+                        release.version = this._generateRandomVersion();
                         release.refs = undefined;
                         return [3 /*break*/, 8];
                     case 8: return [3 /*break*/, 10];
                     case 9:
                         if (version === "random") {
-                            process.env.SLS_DEBUG && this.serverless.cli.log("Creating a random release version...", "sentry");
-                            release.version = this.getRandomVersion();
+                            this.logging.log.verbose("Creating a random release version...");
+                            release.version = this._generateRandomVersion();
                         }
                         else {
                             str = String(version).trim();
-                            process.env.SLS_DEBUG && this.serverless.cli.log("Setting release version to \"".concat(str, "\"..."), "sentry");
+                            this.logging.log.verbose("Setting release version to \"".concat(str, "\"..."));
                             release.version = str;
                         }
                         _c.label = 10;
@@ -502,7 +503,7 @@ var SentryPlugin = /** @class */ (function () {
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
-                        apiParameters = this._apiParameters();
+                        apiParameters = this._getApiParameters();
                         if (!apiParameters) {
                             // Nothing to do
                             return [2 /*return*/];
@@ -513,7 +514,7 @@ var SentryPlugin = /** @class */ (function () {
                             refs: refs,
                             version: version,
                         };
-                        this.serverless.cli.log("Creating new release \"".concat(version, "\"...: ").concat(JSON.stringify(payload)), "sentry");
+                        this.logging.log.notice("Creating new release \"".concat(version, "\"...: ").concat(JSON.stringify(payload)));
                         _c.label = 1;
                     case 1:
                         _c.trys.push([1, 3, , 4]);
@@ -527,27 +528,31 @@ var SentryPlugin = /** @class */ (function () {
                     case 3:
                         err_2 = _c.sent();
                         if ((_a = err_2 === null || err_2 === void 0 ? void 0 : err_2.response) === null || _a === void 0 ? void 0 : _a.text) {
-                            this.serverless.cli.log("Received error response from Sentry:\n".concat(String((_b = err_2 === null || err_2 === void 0 ? void 0 : err_2.response) === null || _b === void 0 ? void 0 : _b.text)), "sentry");
+                            this.logging.log.error("Received error response from Sentry:\n".concat(String((_b = err_2 === null || err_2 === void 0 ? void 0 : err_2.response) === null || _b === void 0 ? void 0 : _b.text)));
                         }
                         throw new Error("Sentry: Error uploading release - ".concat(err_2.toString()));
-                    case 4: return [2 /*return*/];
+                    case 4:
+                        this.logging.log.success("Release ".concat(version, " created"));
+                        return [2 /*return*/];
                 }
             });
         });
     };
     SentryPlugin.prototype.uploadSentrySourcemaps = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var apiParameters, artifacts, results;
+            var apiParameters, progress, artifacts, results, uploaded;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        apiParameters = this._apiParameters();
+                        apiParameters = this._getApiParameters();
                         if (!apiParameters || !this.sentry.sourceMaps) {
                             // Nothing to do
                             return [2 /*return*/];
                         }
-                        this.serverless.cli.log("Uploading sourcemaps to sentry", "sentry");
+                        progress = this.logging.progress.create({
+                            message: "Uploading source maps",
+                        });
                         artifacts = new Set(this.serverless.service
                             .getAllFunctions()
                             .map(function (name) { var _a; return (_a = _this.serverless.service.getFunction(name).package) === null || _a === void 0 ? void 0 : _a.artifact; })
@@ -561,11 +566,26 @@ var SentryPlugin = /** @class */ (function () {
                                 }
                             });
                         });
-                        // Upload artifacts one after the other
-                        return [4 /*yield*/, results.reduce(function (previousPromise, nextArtifact) { return previousPromise.then(function () { return nextArtifact(); }); }, Promise.resolve())];
+                        uploaded = 0;
+                        return [4 /*yield*/, promise_pool_1.PromisePool.withConcurrency(5)
+                                .for(results)
+                                .process(function (nextArtifact) { return __awaiter(_this, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            progress.update("".concat(Math.floor(uploaded / results.length), "%"));
+                                            return [4 /*yield*/, nextArtifact()];
+                                        case 1:
+                                            _a.sent();
+                                            uploaded += 1;
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); })];
                     case 1:
-                        // Upload artifacts one after the other
                         _a.sent();
+                        progress.remove();
+                        this.logging.log.success("Source maps uploaded");
                         return [2 /*return*/];
                 }
             });
@@ -596,11 +616,11 @@ var SentryPlugin = /** @class */ (function () {
                         err_3 = _d.sent();
                         responseError = err_3;
                         if (((_a = responseError === null || responseError === void 0 ? void 0 : responseError.response) === null || _a === void 0 ? void 0 : _a.status) === 409) {
-                            process.env.SLS_DEBUG && this.serverless.cli.log("Skipping already uploaded file: ".concat(entry.name), "sentry");
+                            this.logging.log.verbose("Skipping already uploaded file: ".concat(entry.name));
                             return [2 /*return*/];
                         }
                         else if ((_b = responseError === null || responseError === void 0 ? void 0 : responseError.response) === null || _b === void 0 ? void 0 : _b.text) {
-                            this.serverless.cli.log("Received error response from Sentry:\n".concat(String((_c = err_3 === null || err_3 === void 0 ? void 0 : err_3.response) === null || _c === void 0 ? void 0 : _c.text)), "sentry");
+                            this.logging.log.error("Received error response from Sentry:\n".concat(String((_c = err_3 === null || err_3 === void 0 ? void 0 : err_3.response) === null || _c === void 0 ? void 0 : _c.text)));
                         }
                         throw new Error("Sentry: Error uploading sourcemap file - ".concat(err_3.toString()));
                     case 4: return [2 /*return*/];
@@ -615,12 +635,12 @@ var SentryPlugin = /** @class */ (function () {
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
-                        apiParameters = this._apiParameters();
+                        apiParameters = this._getApiParameters();
                         if (!apiParameters || !this.sentry.sourceMaps) {
                             // Nothing to do
                             return [2 /*return*/];
                         }
-                        this.serverless.cli.log("Deploying release \"".concat(String(apiParameters.version), "\"..."), "sentry");
+                        this.logging.log.notice("Deploying release \"".concat(String(apiParameters.version), "\"..."));
                         _c.label = 1;
                     case 1:
                         _c.trys.push([1, 3, , 4]);
@@ -637,17 +657,19 @@ var SentryPlugin = /** @class */ (function () {
                     case 3:
                         err_4 = _c.sent();
                         if ((_a = err_4 === null || err_4 === void 0 ? void 0 : err_4.response) === null || _a === void 0 ? void 0 : _a.text) {
-                            this.serverless.cli.log("Received error response from Sentry:\n".concat(String((_b = err_4 === null || err_4 === void 0 ? void 0 : err_4.response) === null || _b === void 0 ? void 0 : _b.text)), "sentry");
+                            this.logging.log.error("Received error response from Sentry:\n".concat(String((_b = err_4 === null || err_4 === void 0 ? void 0 : err_4.response) === null || _b === void 0 ? void 0 : _b.text)));
                         }
                         throw new Error("Sentry: Error deploying release - ".concat(err_4.toString()));
-                    case 4: return [2 /*return*/];
+                    case 4:
+                        this.logging.log.success("Release \"".concat(String(apiParameters.version), "\" deployed"));
+                        return [2 /*return*/];
                 }
             });
         });
     };
-    SentryPlugin.prototype._apiParameters = function () {
+    SentryPlugin.prototype._getApiParameters = function () {
         if (!this.sentry.dsn || !this.sentry.authToken || !this.sentry.release) {
-            // Not configured for API access
+            // Not configured for Sentry API access
             return;
         }
         var organization = this.sentry.organization;
@@ -666,7 +688,7 @@ var SentryPlugin = /** @class */ (function () {
             version: release.version,
         };
     };
-    SentryPlugin.prototype.getRandomVersion = function () {
+    SentryPlugin.prototype._generateRandomVersion = function () {
         return (0, uuid_1.v4)().replace(/-/g, "");
     };
     return SentryPlugin;

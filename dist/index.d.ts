@@ -1,9 +1,7 @@
-import * as AdmZip from "adm-zip";
 import Serverless from "serverless";
 import Plugin from "serverless/classes/Plugin";
 import Service from "serverless/classes/Service";
 import Aws from "serverless/plugins/aws/provider/awsProvider";
-import GitRev from "./git-rev";
 export declare type SentryRelease = {
     version: string | boolean;
     refs?: {
@@ -45,14 +43,6 @@ export declare type SentryOptions = {
 declare type FunctionDefinitionWithSentry = Serverless.FunctionDefinition & {
     sentry?: boolean | SentryOptions;
 };
-/** Required parameters for creating/updating releases in the API */
-declare type ApiParameters = {
-    authToken: string;
-    organization: string;
-    project?: string;
-    refs?: SentryRelease["refs"];
-    version: string;
-};
 /**
  * Serverless Plugin forward Lambda exceptions to Sentry (https://sentry.io)
  */
@@ -67,7 +57,8 @@ export declare class SentryPlugin implements Plugin {
     provider: Aws;
     validated: boolean;
     isInstrumented: boolean;
-    constructor(serverless: Serverless, options: Serverless.Options);
+    logging: Plugin.Logging;
+    constructor(serverless: Serverless, options: Serverless.Options, logging: Plugin.Logging);
     configPlugin(): void;
     validate(): Promise<void>;
     instrumentFunction(originalDefinition: Serverless.FunctionDefinition, setEnv: boolean): FunctionDefinitionWithSentry;
@@ -76,13 +67,13 @@ export declare class SentryPlugin implements Plugin {
      * @param setEnv set to `true` to set `process.env`. Useful when invoking the Lambda locally
      */
     instrumentFunctions(setEnv?: boolean): Promise<void>;
-    _resolveGitRefs(gitRev: GitRev, release: SentryRelease): Promise<SentryRelease>;
+    private _resolveGitRefs;
     setRelease(): Promise<void>;
     createSentryRelease(): Promise<void>;
     uploadSentrySourcemaps(): Promise<void>;
-    _uploadSourceMap(entry: AdmZip.IZipEntry, params: ApiParameters): Promise<void>;
+    private _uploadSourceMap;
     deploySentryRelease(): Promise<void>;
-    _apiParameters(): ApiParameters | undefined;
-    getRandomVersion(): string;
+    private _getApiParameters;
+    private _generateRandomVersion;
 }
 export {};

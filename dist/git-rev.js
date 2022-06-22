@@ -98,7 +98,7 @@ var GitRev = /** @class */ (function () {
     GitRev.prototype.exactTag = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                // Suppress errors
+                // Suppress errors as this will fail if no tag exists yet
                 return [2 /*return*/, this._command("git describe --exact-match --tags HEAD").catch(function () { return undefined; })];
             });
         });
