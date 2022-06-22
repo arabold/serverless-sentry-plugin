@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import { PromisePool } from "@supercharge/promise-pool";
 import * as AdmZip from "adm-zip";
 import * as SemVer from "semver";
 import Serverless from "serverless";
@@ -443,7 +444,7 @@ export class SentryPlugin implements Plugin {
       return;
     }
 
-    this.serverless.cli.log("Uploading sourcemaps to sentry", "sentry");
+    this.serverless.cli.log("Uploading source maps to Sentry", "sentry");
 
     const artifacts = new Set(
       this.serverless.service
@@ -464,11 +465,10 @@ export class SentryPlugin implements Plugin {
       });
     });
 
-    // Upload artifacts one after the other
-    await results.reduce(
-      (previousPromise, nextArtifact) => previousPromise.then(() => nextArtifact()),
-      Promise.resolve(),
-    );
+    // Upload artifacts
+    await PromisePool.withConcurrency(5)
+      .for(results)
+      .process(async (nextArtifact) => await nextArtifact());
   }
 
   async _uploadSourceMap(entry: AdmZip.IZipEntry, params: ApiParameters): Promise<void> {
