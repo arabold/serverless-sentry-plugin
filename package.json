@@ -47,10 +47,11 @@
     "getsentry.com"
   ],
   "peerDependencies": {
-    "serverless": ">=2",
+    "serverless": ">=3",
     "serverless-sentry-lib": "2.x.x"
   },
   "dependencies": {
+    "@supercharge/promise-pool": "^2.3.0",
     "adm-zip": "^0.5.9",
     "semver": "^7.3.2",
     "superagent": "^7.1.6",
