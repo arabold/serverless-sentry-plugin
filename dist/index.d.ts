@@ -80,9 +80,9 @@ export declare class SentryPlugin implements Plugin {
     setRelease(): Promise<void>;
     createSentryRelease(): Promise<void>;
     uploadSentrySourcemaps(): Promise<void>;
-    uploadSourceMap(entry: AdmZip.IZipEntry, params: ApiParameters): Promise<void>;
+    _uploadSourceMap(entry: AdmZip.IZipEntry, params: ApiParameters): Promise<void>;
     deploySentryRelease(): Promise<void>;
-    apiParameters(): ApiParameters | undefined;
+    _apiParameters(): ApiParameters | undefined;
     getRandomVersion(): string;
 }
 export {};

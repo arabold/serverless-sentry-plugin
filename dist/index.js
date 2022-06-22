@@ -502,7 +502,7 @@ var SentryPlugin = /** @class */ (function () {
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
-                        apiParameters = this.apiParameters();
+                        apiParameters = this._apiParameters();
                         if (!apiParameters) {
                             // Nothing to do
                             return [2 /*return*/];
@@ -542,8 +542,8 @@ var SentryPlugin = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        apiParameters = this.apiParameters();
-                        if (!apiParameters) {
+                        apiParameters = this._apiParameters();
+                        if (!apiParameters || !this.sentry.sourceMaps) {
                             // Nothing to do
                             return [2 /*return*/];
                         }
@@ -557,19 +557,21 @@ var SentryPlugin = /** @class */ (function () {
                             var zip = new AdmZip(artifact);
                             zip.getEntries().forEach(function (entry) {
                                 if ((!entry.isDirectory && entry.name.endsWith(".js")) || entry.name.endsWith(".js.map")) {
-                                    results.push(_this.uploadSourceMap(entry, apiParameters));
+                                    results.push(function () { return _this._uploadSourceMap(entry, apiParameters); });
                                 }
                             });
                         });
-                        return [4 /*yield*/, Promise.all(results)];
+                        // Upload artifacts one after the other
+                        return [4 /*yield*/, results.reduce(function (previousPromise, nextArtifact) { return previousPromise.then(function () { return nextArtifact(); }); }, Promise.resolve())];
                     case 1:
+                        // Upload artifacts one after the other
                         _a.sent();
                         return [2 /*return*/];
                 }
             });
         });
     };
-    SentryPlugin.prototype.uploadSourceMap = function (entry, params) {
+    SentryPlugin.prototype._uploadSourceMap = function (entry, params) {
         var _a, _b, _c;
         return __awaiter(this, void 0, void 0, function () {
             var prefix, filePath, data, err_3, responseError;
@@ -613,7 +615,7 @@ var SentryPlugin = /** @class */ (function () {
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
-                        apiParameters = this.apiParameters();
+                        apiParameters = this._apiParameters();
                         if (!apiParameters || !this.sentry.sourceMaps) {
                             // Nothing to do
                             return [2 /*return*/];
@@ -643,7 +645,7 @@ var SentryPlugin = /** @class */ (function () {
             });
         });
     };
-    SentryPlugin.prototype.apiParameters = function () {
+    SentryPlugin.prototype._apiParameters = function () {
         if (!this.sentry.dsn || !this.sentry.authToken || !this.sentry.release) {
             // Not configured for API access
             return;
