@@ -406,7 +406,7 @@ export class SentryPlugin implements Plugin {
   }
 
   async createSentryRelease(): Promise<void> {
-    const apiParameters = this.apiParameters();
+    const apiParameters = this._apiParameters();
     if (!apiParameters) {
       // Nothing to do
       return;
@@ -437,8 +437,8 @@ export class SentryPlugin implements Plugin {
   }
 
   async uploadSentrySourcemaps(): Promise<void> {
-    const apiParameters = this.apiParameters();
-    if (!apiParameters) {
+    const apiParameters = this._apiParameters();
+    if (!apiParameters || !this.sentry.sourceMaps) {
       // Nothing to do
       return;
     }
@@ -452,22 +452,26 @@ export class SentryPlugin implements Plugin {
         .filter((artifact): artifact is string => typeof artifact === "string"),
     );
 
-    const results: Promise<void>[] = [];
+    const results: (() => Promise<void>)[] = [];
 
     artifacts.forEach((artifact) => {
       const zip = new AdmZip(artifact);
 
       zip.getEntries().forEach((entry) => {
         if ((!entry.isDirectory && entry.name.endsWith(".js")) || entry.name.endsWith(".js.map")) {
-          results.push(this.uploadSourceMap(entry, apiParameters));
+          results.push(() => this._uploadSourceMap(entry, apiParameters));
         }
       });
     });
 
-    await Promise.all(results);
+    // Upload artifacts one after the other
+    await results.reduce(
+      (previousPromise, nextArtifact) => previousPromise.then(() => nextArtifact()),
+      Promise.resolve(),
+    );
   }
 
-  async uploadSourceMap(entry: AdmZip.IZipEntry, params: ApiParameters): Promise<void> {
+  async _uploadSourceMap(entry: AdmZip.IZipEntry, params: ApiParameters): Promise<void> {
     const prefix = typeof this.sentry.sourceMaps === "object" && this.sentry.sourceMaps.urlPrefix;
     const filePath = prefix ? path.join(prefix, entry.entryName) : entry.entryName;
     const data = entry.getData();
@@ -496,7 +500,7 @@ export class SentryPlugin implements Plugin {
   }
 
   async deploySentryRelease(): Promise<void> {
-    const apiParameters = this.apiParameters();
+    const apiParameters = this._apiParameters();
     if (!apiParameters || !this.sentry.sourceMaps) {
       // Nothing to do
       return;
@@ -526,7 +530,7 @@ export class SentryPlugin implements Plugin {
     }
   }
 
-  apiParameters(): ApiParameters | undefined {
+  _apiParameters(): ApiParameters | undefined {
     if (!this.sentry.dsn || !this.sentry.authToken || !this.sentry.release) {
       // Not configured for API access
       return;
