@@ -322,7 +322,7 @@ export class SentryPlugin implements Plugin {
   async _resolveGitRefs(gitRev: GitRev, release: SentryRelease): Promise<SentryRelease> {
     const origin = await gitRev.origin();
     const commit = await gitRev.long();
-    let repository = /[:/]([^/]+\/[^/]+?)(?:\.git)?$/i.exec(origin)?.[1];
+    let repository = /[:/](.+?)(?:\.git)?$/i.exec(origin)?.[1];
     if (repository && origin.includes("gitlab")) {
       // GitLab uses spaces around the slashes in the repository name
       repository = repository.replace(/\//g, " / ");
