@@ -261,7 +261,7 @@ export class SentryPlugin implements Plugin {
       setEnv && (process.env.SENTRY_AUTO_BREADCRUMBS = newDefinition.environment.SENTRY_AUTO_BREADCRUMBS);
     }
     if (typeof sentryConfig.sourceMaps !== "undefined") {
-      newDefinition.environment.SENTRY_SOURCEMAPS = String(sentryConfig.sourceMaps);
+      newDefinition.environment.SENTRY_SOURCEMAPS = JSON.stringify(sentryConfig.sourceMaps);
       setEnv && (process.env.SENTRY_SOURCEMAPS = newDefinition.environment.SENTRY_SOURCEMAPS);
     }
     if (typeof sentryConfig.filterLocal !== "undefined") {
