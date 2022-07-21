@@ -61,10 +61,11 @@ var _e = encodeURIComponent;
  * Serverless Plugin forward Lambda exceptions to Sentry (https://sentry.io)
  */
 var SentryPlugin = /** @class */ (function () {
-    function SentryPlugin(serverless, options) {
+    function SentryPlugin(serverless, options, logging) {
         var _this = this;
         this.serverless = serverless;
         this.options = options;
+        this.logging = logging;
         this.custom = this.serverless.service.custom;
         this.provider = this.serverless.getProvider("aws");
         // Create schema for our properties. For reference use https://github.com/ajv-validator/ajv
@@ -179,11 +180,13 @@ var SentryPlugin = /** @class */ (function () {
                         case 0: return [4 /*yield*/, this.createSentryRelease()];
                         case 1:
                             _a.sent();
-                            return [4 /*yield*/, this.uploadSentrySourcemaps()];
-                        case 2:
-                            _a.sent();
+                            // uploading sentry source maps doesn't work for "deploy function" command #67
+                            // TODO to add proper fix once it's addressed on serverless-core https://github.com/serverless/serverless/issues/11179
+                            this.logging.log.warning('Uploading source maps is skipped for "deploy function" because it is not working');
+                            // await this.uploadSentrySourcemaps();
                             return [4 /*yield*/, this.deploySentryRelease()];
-                        case 3:
+                        case 2:
+                            // await this.uploadSentrySourcemaps();
                             _a.sent();
                             return [2 /*return*/];
                     }
