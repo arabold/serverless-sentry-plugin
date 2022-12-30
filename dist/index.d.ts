@@ -60,6 +60,7 @@ export declare class SentryPlugin implements Plugin {
     sentry: Partial<SentryOptions>;
     serverless: Serverless;
     options: Serverless.Options;
+    logging: Plugin.Logging;
     custom: Service.Custom;
     hooks: {
         [event: string]: (...rest: any[]) => any;
@@ -67,7 +68,7 @@ export declare class SentryPlugin implements Plugin {
     provider: Aws;
     validated: boolean;
     isInstrumented: boolean;
-    constructor(serverless: Serverless, options: Serverless.Options);
+    constructor(serverless: Serverless, options: Serverless.Options, logging: Plugin.Logging);
     configPlugin(): void;
     validate(): Promise<void>;
     instrumentFunction(originalDefinition: Serverless.FunctionDefinition, setEnv: boolean): FunctionDefinitionWithSentry;

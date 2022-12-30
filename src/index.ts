@@ -80,15 +80,17 @@ export class SentryPlugin implements Plugin {
   sentry: Partial<SentryOptions>;
   serverless: Serverless;
   options: Serverless.Options;
+  logging: Plugin.Logging;
   custom: Service.Custom;
   hooks: { [event: string]: (...rest: any[]) => any };
   provider: Aws;
   validated: boolean;
   isInstrumented: boolean;
 
-  constructor(serverless: Serverless, options: Serverless.Options) {
+  constructor(serverless: Serverless, options: Serverless.Options, logging: Plugin.Logging) {
     this.serverless = serverless;
     this.options = options;
+    this.logging = logging;
     this.custom = this.serverless.service.custom;
     this.provider = this.serverless.getProvider("aws");
 
@@ -162,7 +164,10 @@ export class SentryPlugin implements Plugin {
 
       "after:deploy:function:deploy": async () => {
         await this.createSentryRelease();
-        await this.uploadSentrySourcemaps();
+        // uploading sentry source maps doesn't work for "deploy function" command #67
+        // TODO to add proper fix once it's addressed on serverless-core https://github.com/serverless/serverless/issues/11179
+        this.logging.log.warning('Uploading source maps is skipped for "deploy function" because it is not working');
+        // await this.uploadSentrySourcemaps();
         await this.deploySentryRelease();
       },
 
